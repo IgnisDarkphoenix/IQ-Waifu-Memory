@@ -112,26 +112,26 @@ public class GalleryScreen extends BaseScreen {
         
         // Calcular scroll máximo
         float contentHeight = totalRows * (slotSize + spacing);
-        float visibleHeight = Constants.WORLD_HEIGHT - 250; // Espacio visible
+        float visibleHeight = Constants.WORLD_HEIGHT - 250;
         maxScrollY = Math.max(0, contentHeight - visibleHeight);
         
         // Botones del visor de personaje
         float btnSize = 80f;
         closeViewerButton = new Rectangle(
-            Constants.WORLD_WIDTH - btnSize - 40, 
-            Constants.WORLD_HEIGHT - btnSize - 40, 
+            Constants.WORLD_WIDTH - btnSize - 40,
+            Constants.WORLD_HEIGHT - btnSize - 40,
             btnSize, btnSize
         );
         
         prevVariantButton = new Rectangle(
-            40, 
-            Constants.WORLD_HEIGHT / 2 - btnSize / 2, 
+            40,
+            Constants.WORLD_HEIGHT / 2 - btnSize / 2,
             btnSize, btnSize
         );
         
         nextVariantButton = new Rectangle(
-            Constants.WORLD_WIDTH - btnSize - 40, 
-            Constants.WORLD_HEIGHT / 2 - btnSize / 2, 
+            Constants.WORLD_WIDTH - btnSize - 40,
+            Constants.WORLD_HEIGHT / 2 - btnSize / 2,
             btnSize, btnSize
         );
         
@@ -150,7 +150,6 @@ public class GalleryScreen extends BaseScreen {
                 viewport.unproject(touchPos);
                 lastTouchY = touchPos.y;
                 isDragging = false;
-                
                 return true;
             }
             
@@ -159,7 +158,6 @@ public class GalleryScreen extends BaseScreen {
                 touchPos.set(screenX, screenY, 0);
                 viewport.unproject(touchPos);
                 
-                // Si no estaba arrastrando, procesar como click
                 if (!isDragging) {
                     if (viewingCharacter) {
                         handleViewerClick();
@@ -181,7 +179,6 @@ public class GalleryScreen extends BaseScreen {
                 
                 float deltaY = lastTouchY - touchPos.y;
                 
-                // Solo considerar drag si el movimiento es significativo
                 if (Math.abs(deltaY) > 5) {
                     isDragging = true;
                     scrollY = Math.max(0, Math.min(maxScrollY, scrollY + deltaY));
@@ -194,21 +191,18 @@ public class GalleryScreen extends BaseScreen {
     }
     
     private void handleGalleryClick() {
-        // Botón atrás
         if (backButton.contains(touchPos.x, touchPos.y)) {
             audioManager.playButtonClick();
             goToScreen(new HomeScreen(game));
             return;
         }
         
-        // Verificar click en slots de personajes
         for (int i = 0; i < characterSlots.length; i++) {
             Rectangle slot = characterSlots[i];
             float adjustedY = slot.y + scrollY;
             
             if (touchPos.x >= slot.x && touchPos.x <= slot.x + slot.width &&
                 touchPos.y >= adjustedY && touchPos.y <= adjustedY + slot.height) {
-                
                 openCharacterViewer(i);
                 return;
             }
@@ -216,28 +210,24 @@ public class GalleryScreen extends BaseScreen {
     }
     
     private void handleViewerClick() {
-        // Botón cerrar
         if (closeViewerButton.contains(touchPos.x, touchPos.y)) {
             audioManager.playButtonClick();
             closeCharacterViewer();
             return;
         }
         
-        // Botón variante anterior
         if (prevVariantButton.contains(touchPos.x, touchPos.y)) {
             audioManager.playButtonClick();
             changeVariant(-1);
             return;
         }
         
-        // Botón siguiente variante
         if (nextVariantButton.contains(touchPos.x, touchPos.y)) {
             audioManager.playButtonClick();
             changeVariant(1);
             return;
         }
         
-        // Botón desbloquear
         if (unlockButton.contains(touchPos.x, touchPos.y)) {
             tryUnlockCurrentVariant();
             return;
@@ -249,14 +239,12 @@ public class GalleryScreen extends BaseScreen {
         viewingCharacter = true;
         viewedCharacterId = characterId;
         viewedVariant = 0;
-        
         Gdx.app.log(Constants.TAG, "Abriendo visor para personaje: " + characterId);
     }
     
     private void closeCharacterViewer() {
         viewingCharacter = false;
         
-        // Descargar texturas de variantes para liberar memoria
         for (int i = 0; i < Constants.ARTS_PER_CHARACTER; i++) {
             assetManager.unloadCharacterTexture(viewedCharacterId, i);
         }
@@ -266,16 +254,10 @@ public class GalleryScreen extends BaseScreen {
     
     private void changeVariant(int direction) {
         int unlockLevel = getPlayerData().getCharacterUnlockLevel(viewedCharacterId);
-        
-        // Solo puede ver variantes desbloqueadas (0 a unlockLevel-1)
-        // unlockLevel 1 = solo base (variante 0)
-        // unlockLevel 2 = base + ☆ (variantes 0-1)
-        // etc.
         int maxViewableVariant = Math.max(0, unlockLevel - 1);
         
         viewedVariant += direction;
         
-        // Wrap around
         if (viewedVariant < 0) {
             viewedVariant = maxViewableVariant;
         } else if (viewedVariant > maxViewableVariant) {
@@ -286,41 +268,31 @@ public class GalleryScreen extends BaseScreen {
     private void tryUnlockCurrentVariant() {
         int currentUnlockLevel = getPlayerData().getCharacterUnlockLevel(viewedCharacterId);
         
-        // Verificar si hay algo que desbloquear
         if (currentUnlockLevel >= Constants.ARTS_PER_CHARACTER) {
-            // Ya está completamente desbloqueado
             return;
         }
         
-        // Intentar desbloquear
         if (getPlayerData().unlockCharacterLevel(viewedCharacterId)) {
             audioManager.playButtonClick();
             audioManager.playCoinCollect();
             saveProgress();
-            
-            Gdx.app.log(Constants.TAG, "Desbloqueado nivel " + 
+            Gdx.app.log(Constants.TAG, "Desbloqueado nivel " +
                        (currentUnlockLevel + 1) + " del personaje " + viewedCharacterId);
         }
     }
     
-    /**
-     * Obtiene el costo de desbloqueo para el siguiente nivel
-     */
     private int getNextUnlockCost(int characterId) {
         int currentLevel = getPlayerData().getCharacterUnlockLevel(characterId);
         
         switch (currentLevel) {
-            case 0: return Constants.GALLERY_BASE_COST;      // 250
-            case 1: return Constants.GALLERY_STAR1_COST;     // 500
-            case 2: return Constants.GALLERY_STAR2_COST;     // 750
-            case 3: return Constants.GALLERY_STAR3_COST;     // 1000
-            default: return -1; // Ya está completo
+            case 0: return Constants.GALLERY_BASE_COST;
+            case 1: return Constants.GALLERY_STAR1_COST;
+            case 2: return Constants.GALLERY_STAR2_COST;
+            case 3: return Constants.GALLERY_STAR3_COST;
+            default: return -1;
         }
     }
     
-    /**
-     * Genera string de estrellas según nivel de desbloqueo
-     */
     private String getStarsString(int unlockLevel) {
         switch (unlockLevel) {
             case 1: return "BASE";
@@ -331,9 +303,6 @@ public class GalleryScreen extends BaseScreen {
         }
     }
     
-    /**
-     * Obtiene el nombre de la variante
-     */
     private String getVariantName(int variant) {
         switch (variant) {
             case 0: return "Base";
@@ -346,7 +315,7 @@ public class GalleryScreen extends BaseScreen {
     
     @Override
     protected void update(float delta) {
-        // Animaciones suaves de scroll podrían ir aquí
+        // Animaciones si son necesarias
     }
     
     @Override
@@ -358,11 +327,7 @@ public class GalleryScreen extends BaseScreen {
         }
     }
     
-    /**
-     * Dibuja la cuadrícula de la galería
-     */
     private void drawGalleryGrid() {
-        // ===== DIBUJAR FORMAS =====
         shapeRenderer.setProjectionMatrix(camera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         
@@ -379,18 +344,15 @@ public class GalleryScreen extends BaseScreen {
             Rectangle slot = characterSlots[i];
             float adjustedY = slot.y + scrollY;
             
-            // Solo dibujar si está visible en pantalla
             if (adjustedY > -slot.height && adjustedY < Constants.WORLD_HEIGHT - 130) {
                 int unlockLevel = getPlayerData().getCharacterUnlockLevel(i);
                 
                 if (unlockLevel > 0) {
-                    // Desbloqueado - gradiente de color según nivel
                     float r = 0.2f + (unlockLevel * 0.1f);
                     float g = 0.15f + (unlockLevel * 0.15f);
                     float b = 0.3f + (unlockLevel * 0.1f);
                     shapeRenderer.setColor(r, g, b, 1f);
                 } else {
-                    // Bloqueado - gris oscuro
                     shapeRenderer.setColor(0.15f, 0.15f, 0.18f, 1f);
                 }
                 
@@ -400,7 +362,7 @@ public class GalleryScreen extends BaseScreen {
         
         shapeRenderer.end();
         
-        // Bordes de los slots
+        // Bordes
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
         shapeRenderer.setColor(0.4f, 0.4f, 0.5f, 1f);
         
@@ -415,38 +377,38 @@ public class GalleryScreen extends BaseScreen {
         
         shapeRenderer.end();
         
-        // ===== DIBUJAR TEXTO =====
+        // Texto
         batch.begin();
         
         // Título
         String title = "GALERIA";
         layout.setText(titleFont, title);
-        titleFont.draw(batch, title, 
-            Constants.WORLD_WIDTH / 2 - layout.width / 2, 
+        titleFont.draw(batch, title,
+            Constants.WORLD_WIDTH / 2 - layout.width / 2,
             Constants.WORLD_HEIGHT - 45);
         
         // PCOINS
         String pcoinsText = Constants.CURRENCY_NAME + ": " + getPlayerData().pcoins;
         layout.setText(textFont, pcoinsText);
-        textFont.draw(batch, pcoinsText, 
-            Constants.WORLD_WIDTH - layout.width - 40, 
+        textFont.draw(batch, pcoinsText,
+            Constants.WORLD_WIDTH - layout.width - 40,
             Constants.WORLD_HEIGHT - 50);
         
-        // Progreso de la galería
+        // Progreso
         float completion = getPlayerData().getGalleryCompletionPercent();
         String progressText = String.format("Completado: %.1f%%", completion);
         layout.setText(smallFont, progressText);
-        smallFont.draw(batch, progressText, 
-            Constants.WORLD_WIDTH / 2 - layout.width / 2, 
+        smallFont.draw(batch, progressText,
+            Constants.WORLD_WIDTH / 2 - layout.width / 2,
             Constants.WORLD_HEIGHT - 100);
         
-        // Símbolo del botón atrás
+        // Botón atrás
         layout.setText(textFont, "<");
         textFont.draw(batch, "<",
             backButton.x + (backButton.width - layout.width) / 2,
             backButton.y + (backButton.height + layout.height) / 2);
         
-        // Indicadores en cada slot
+        // Indicadores en slots
         for (int i = 0; i < characterSlots.length; i++) {
             Rectangle slot = characterSlots[i];
             float adjustedY = slot.y + scrollY;
@@ -457,11 +419,10 @@ public class GalleryScreen extends BaseScreen {
                 // Número del personaje
                 String numText = String.format("#%02d", i + 1);
                 layout.setText(smallFont, numText);
-                smallFont.draw(batch, numText,
-                    slot.x + 5,
-                    adjustedY + slot.height - 5);
+                smallFont.setColor(Color.WHITE);
+                smallFont.draw(batch, numText, slot.x + 5, adjustedY + slot.height - 5);
                 
-                // Indicador de estado
+                // Estado
                 String statusText;
                 if (unlockLevel == 0) {
                     statusText = "BLOQUEADO";
@@ -481,13 +442,12 @@ public class GalleryScreen extends BaseScreen {
                 
                 smallFont.setColor(Color.WHITE);
                 
-                // Costo si está bloqueado o incompleto
+                // Costo
                 if (unlockLevel < Constants.ARTS_PER_CHARACTER) {
                     int cost = getNextUnlockCost(i);
                     String costText = cost + " P";
                     layout.setText(smallFont, costText);
                     
-                    // Color según si puede pagar
                     if (getPlayerData().pcoins >= cost) {
                         smallFont.setColor(Color.GREEN);
                     } else {
@@ -506,14 +466,10 @@ public class GalleryScreen extends BaseScreen {
         batch.end();
     }
     
-    /**
-     * Dibuja el visor de personaje individual
-     */
     private void drawCharacterViewer() {
         int unlockLevel = getPlayerData().getCharacterUnlockLevel(viewedCharacterId);
         boolean isCurrentVariantUnlocked = viewedVariant < unlockLevel;
         
-        // ===== FONDO OSCURO =====
         Gdx.gl.glEnable(Gdx.gl.GL_BLEND);
         shapeRenderer.setProjectionMatrix(camera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
@@ -522,7 +478,7 @@ public class GalleryScreen extends BaseScreen {
         shapeRenderer.setColor(0.1f, 0.1f, 0.15f, 1f);
         shapeRenderer.rect(0, 0, Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT);
         
-        // Panel central para la imagen
+        // Panel central
         float panelSize = Constants.WORLD_WIDTH - 160;
         float panelX = (Constants.WORLD_WIDTH - panelSize) / 2;
         float panelY = Constants.WORLD_HEIGHT / 2 - panelSize / 2 + 50;
@@ -532,10 +488,10 @@ public class GalleryScreen extends BaseScreen {
         
         // Botón cerrar
         shapeRenderer.setColor(0.6f, 0.2f, 0.2f, 1f);
-        shapeRenderer.rect(closeViewerButton.x, closeViewerButton.y, 
+        shapeRenderer.rect(closeViewerButton.x, closeViewerButton.y,
                           closeViewerButton.width, closeViewerButton.height);
         
-        // Botones de navegación (solo si hay más de una variante desbloqueada)
+        // Botones de navegación
         if (unlockLevel > 1) {
             shapeRenderer.setColor(0.3f, 0.3f, 0.5f, 1f);
             shapeRenderer.rect(prevVariantButton.x, prevVariantButton.y,
@@ -544,14 +500,14 @@ public class GalleryScreen extends BaseScreen {
                               nextVariantButton.width, nextVariantButton.height);
         }
         
-        // Botón de desbloqueo (si hay algo que desbloquear)
+        // Botón desbloqueo
         if (unlockLevel < Constants.ARTS_PER_CHARACTER) {
             int cost = getNextUnlockCost(viewedCharacterId);
             boolean canAfford = getPlayerData().pcoins >= cost;
             
             if (canAfford) {
-                shapeRenderer.setColor(Constants.COLOR_PRIMARY[0], 
-                                       Constants.COLOR_PRIMARY[1], 
+                shapeRenderer.setColor(Constants.COLOR_PRIMARY[0],
+                                       Constants.COLOR_PRIMARY[1],
                                        Constants.COLOR_PRIMARY[2], 1f);
             } else {
                 shapeRenderer.setColor(0.3f, 0.3f, 0.3f, 1f);
@@ -563,19 +519,26 @@ public class GalleryScreen extends BaseScreen {
         
         shapeRenderer.end();
         
-        // ===== DIBUJAR IMAGEN DEL PERSONAJE =====
+        // Dibujar imagen y marco
         batch.begin();
         
         if (isCurrentVariantUnlocked) {
-            // Intentar cargar y mostrar la textura
             Texture charTexture = assetManager.getCharacterTexture(viewedCharacterId, viewedVariant);
+            Texture frameTexture = assetManager.getFrameTexture(viewedVariant);
+            
+            float imgSize = panelSize - 40;
+            float imgX = panelX + 20;
+            float imgY = panelY + 20;
             
             if (charTexture != null) {
-                // Dibujar la imagen del personaje
-                batch.draw(charTexture, panelX + 10, panelY + 10, 
-                          panelSize - 20, panelSize - 20);
+                // 1. Dibujar personaje
+                batch.draw(charTexture, imgX, imgY, imgSize, imgSize);
+                
+                // 2. Dibujar marco encima
+                if (frameTexture != null) {
+                    batch.draw(frameTexture, imgX, imgY, imgSize, imgSize);
+                }
             } else {
-                // Placeholder si no hay textura
                 String placeholder = "Imagen no\ndisponible";
                 layout.setText(textFont, placeholder);
                 textFont.draw(batch, placeholder,
@@ -583,7 +546,6 @@ public class GalleryScreen extends BaseScreen {
                     Constants.WORLD_HEIGHT / 2 + layout.height / 2);
             }
         } else {
-            // Variante bloqueada
             String lockedText = "BLOQUEADO";
             layout.setText(titleFont, lockedText);
             titleFont.setColor(Color.GRAY);
@@ -592,8 +554,6 @@ public class GalleryScreen extends BaseScreen {
                 Constants.WORLD_HEIGHT / 2);
             titleFont.setColor(Color.WHITE);
         }
-        
-        // ===== TEXTO DEL VISOR =====
         
         // Nombre del personaje
         String charName = "Personaje #" + (viewedCharacterId + 1);
@@ -609,7 +569,7 @@ public class GalleryScreen extends BaseScreen {
             Constants.WORLD_WIDTH / 2 - layout.width / 2,
             Constants.WORLD_HEIGHT - 110);
         
-        // Indicador de variante (X/Y)
+        // Indicador
         int maxViewable = Math.max(1, unlockLevel);
         String indicator = (viewedVariant + 1) + "/" + maxViewable;
         layout.setText(textFont, indicator);
@@ -617,13 +577,13 @@ public class GalleryScreen extends BaseScreen {
             Constants.WORLD_WIDTH / 2 - layout.width / 2,
             panelY - 20);
         
-        // Botón cerrar - X
+        // Botón cerrar
         layout.setText(titleFont, "X");
         titleFont.draw(batch, "X",
             closeViewerButton.x + (closeViewerButton.width - layout.width) / 2,
             closeViewerButton.y + (closeViewerButton.height + layout.height) / 2);
         
-        // Flechas de navegación
+        // Flechas
         if (unlockLevel > 1) {
             layout.setText(titleFont, "<");
             titleFont.draw(batch, "<",
@@ -636,7 +596,7 @@ public class GalleryScreen extends BaseScreen {
                 nextVariantButton.y + (nextVariantButton.height + layout.height) / 2);
         }
         
-        // Texto del botón de desbloqueo
+        // Texto botón desbloqueo
         if (unlockLevel < Constants.ARTS_PER_CHARACTER) {
             int cost = getNextUnlockCost(viewedCharacterId);
             String unlockText = "DESBLOQUEAR: " + cost + " " + Constants.CURRENCY_NAME;
@@ -645,7 +605,6 @@ public class GalleryScreen extends BaseScreen {
                 unlockButton.x + (unlockButton.width - layout.width) / 2,
                 unlockButton.y + (unlockButton.height + layout.height) / 2);
         } else {
-            // Completamente desbloqueado
             String completeText = "¡COMPLETO!";
             layout.setText(textFont, completeText);
             textFont.setColor(Color.GOLD);
@@ -655,7 +614,7 @@ public class GalleryScreen extends BaseScreen {
             textFont.setColor(Color.WHITE);
         }
         
-        // PCOINS actuales
+        // PCOINS
         String pcoinsText = Constants.CURRENCY_NAME + ": " + getPlayerData().pcoins;
         layout.setText(smallFont, pcoinsText);
         smallFont.draw(batch, pcoinsText,
@@ -668,7 +627,6 @@ public class GalleryScreen extends BaseScreen {
     @Override
     public void hide() {
         super.hide();
-        // Limpiar recursos al salir
         if (viewingCharacter) {
             closeCharacterViewer();
         }
