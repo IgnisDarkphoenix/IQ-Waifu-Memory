@@ -91,6 +91,7 @@ public final class Constants {
     public static final String PATH_IMAGES = "images/";
     public static final String PATH_CHARACTERS = "images/characters/";
     public static final String PATH_UI = "images/ui/";
+    public static final String PATH_FRAMES = "images/frames/";
     public static final String PATH_AUDIO = "audio/";
     public static final String PATH_MUSIC = "audio/music/";
     public static final String PATH_SFX = "audio/sfx/";
@@ -102,6 +103,12 @@ public final class Constants {
     public static final String ATLAS_CARDS = "cards.atlas";
     public static final String SKIN_DEFAULT = "skin/default.json";
     public static final String SAVE_FILE = "save.json";
+    
+    // ========== FRAMES/MARCOS ==========
+    public static final String FRAME_BASE = "frame_base.png";
+    public static final String FRAME_STAR1 = "frame_star1.png";
+    public static final String FRAME_STAR2 = "frame_star2.png";
+    public static final String FRAME_STAR3 = "frame_star3.png";
     
     // ========== AUDIO ==========
     public static final float DEFAULT_MUSIC_VOLUME = 0.7f;
