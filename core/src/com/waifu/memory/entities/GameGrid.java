@@ -30,6 +30,9 @@ public class GameGrid {
     // Textura del reverso
     private Texture cardBackTexture;
     
+    // Marcos por rareza
+    private Texture frameBase;
+    
     public GameGrid(int size, GameScreen gameScreen) {
         this.gridSize = size;
         this.gameScreen = gameScreen;
@@ -39,8 +42,9 @@ public class GameGrid {
         // Calcular tamaño de cartas para que quepan en pantalla
         calculateLayout();
         
-        // Obtener textura del reverso
+        // Obtener texturas
         cardBackTexture = gameScreen.getAssetManager().getCardBackTexture();
+        frameBase = gameScreen.getAssetManager().getFrameTexture(0); // Marco base para gameplay
         
         // Crear cartas
         createCards();
@@ -49,7 +53,7 @@ public class GameGrid {
     private void calculateLayout() {
         // Área disponible para el grid
         float availableWidth = Constants.WORLD_WIDTH - 80; // Padding lateral
-        float availableHeight = Constants.WORLD_HEIGHT - 300; // Espacio para HUD
+        float availableHeight = Constants.WORLD_HEIGHT - 350; // Espacio para HUD arriba y abajo
         
         // Calcular tamaño de carta
         float maxCardWidth = (availableWidth - (gridSize - 1) * Constants.CARD_PADDING) / gridSize;
@@ -63,7 +67,7 @@ public class GameGrid {
         float gridHeight = gridSize * cardSize + (gridSize - 1) * spacing;
         
         gridX = (Constants.WORLD_WIDTH - gridWidth) / 2;
-        gridY = (Constants.WORLD_HEIGHT - gridHeight) / 2 - 50; // Un poco hacia abajo por el HUD
+        gridY = (Constants.WORLD_HEIGHT - gridHeight) / 2 - 30; // Un poco hacia abajo por el HUD
     }
     
     private void createCards() {
@@ -72,7 +76,7 @@ public class GameGrid {
         // Crear array de IDs de personajes (cada ID aparece 2 veces)
         int[] characterIds = new int[totalCards];
         for (int i = 0; i < numPairs; i++) {
-            // Usar IDs del 0 al 49 (50 personajes disponibles)
+            // Usar IDs del 0 al 49 (50 personajes disponibles), con wrap around
             int charId = i % Constants.TOTAL_CHARACTERS;
             characterIds[i * 2] = charId;
             characterIds[i * 2 + 1] = charId;
@@ -86,17 +90,18 @@ public class GameGrid {
             int charId = characterIds[i];
             
             // Obtener textura del personaje (lazy loading)
+            // En gameplay usamos variante 0 (base)
             Texture frontTexture = gameScreen.getAssetManager().getCharacterTexture(charId, 0);
             
-            // Crear carta
-            Card card = new Card(charId, frontTexture, cardBackTexture);
+            // Crear carta con marco base
+            Card card = new Card(charId, 0, frontTexture, cardBackTexture, frameBase);
             card.setGridIndex(i);
             
             // Calcular posición
             int row = i / gridSize;
             int col = i % gridSize;
             float x = gridX + col * (cardSize + spacing);
-            float y = gridY + (gridSize - 1 - row) * (cardSize + spacing); // Invertir Y
+            float y = gridY + (gridSize - 1 - row) * (cardSize + spacing); // Invertir Y para que fila 0 esté arriba
             
             card.setPosition(x, y);
             card.setSize(cardSize, cardSize);
@@ -105,6 +110,9 @@ public class GameGrid {
         }
     }
     
+    /**
+     * Mezcla un array de enteros (Fisher-Yates shuffle)
+     */
     private void shuffleArray(int[] array) {
         for (int i = array.length - 1; i > 0; i--) {
             int j = MathUtils.random(i);
@@ -168,7 +176,9 @@ public class GameGrid {
      */
     public void update(float delta) {
         for (Card card : cards) {
-            card.update(delta);
+            if (card != null) {
+                card.update(delta);
+            }
         }
     }
     
@@ -176,43 +186,69 @@ public class GameGrid {
      * Dibuja el grid y las cartas
      */
     public void draw(SpriteBatch batch, ShapeRenderer shapeRenderer, OrthographicCamera camera) {
-        // Dibujar fondo del grid (opcional)
+        // ===== FASE 1: Dibujar fondos con ShapeRenderer =====
         shapeRenderer.setProjectionMatrix(camera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         
         // Fondo semi-transparente del área de juego
-        shapeRenderer.setColor(0.1f, 0.1f, 0.15f, 0.5f);
         float gridWidth = gridSize * cardSize + (gridSize - 1) * spacing;
         float gridHeight = gridSize * cardSize + (gridSize - 1) * spacing;
-        shapeRenderer.rect(gridX - 20, gridY - 20, gridWidth + 40, gridHeight + 40);
+        
+        shapeRenderer.setColor(0.08f, 0.08f, 0.12f, 0.7f);
+        shapeRenderer.rect(gridX - 15, gridY - 15, gridWidth + 30, gridHeight + 30);
+        
+        // Dibujar placeholders para cartas sin textura
+        boolean hasAnyMissingTexture = false;
+        for (Card card : cards) {
+            if (card != null) {
+                boolean showingFront = card.isRevealed() || (card.isAnimating() && card.isRevealed());
+                
+                // Si no tiene textura frontal y está mostrando el frente
+                if (showingFront && !card.hasFrontTexture()) {
+                    hasAnyMissingTexture = true;
+                    card.drawPlaceholder(shapeRenderer, true);
+                }
+                // Si no tiene textura trasera y está mostrando el reverso
+                else if (!showingFront && !card.hasBackTexture()) {
+                    hasAnyMissingTexture = true;
+                    card.drawPlaceholder(shapeRenderer, false);
+                }
+            }
+        }
         
         shapeRenderer.end();
         
-        // Dibujar cartas
+        // ===== FASE 2: Dibujar cartas con SpriteBatch =====
         batch.begin();
         
         for (Card card : cards) {
-            // Dibujar placeholder si no hay textura
             if (card != null) {
-                card.draw(batch);
+                // Solo dibujar con batch si tiene las texturas necesarias
+                boolean showingFront = card.isRevealed() || 
+                                       (card.isAnimating() && !card.isRevealed() == false);
+                
+                if (showingFront && card.hasFrontTexture()) {
+                    card.draw(batch);
+                } else if (!showingFront && card.hasBackTexture()) {
+                    card.draw(batch);
+                }
+                // Si le faltan texturas, ya se dibujó el placeholder arriba
             }
         }
         
         batch.end();
         
-        // Dibujar bordes de cartas (debug/placeholder)
-        if (cardBackTexture == null) {
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-            shapeRenderer.setColor(Color.WHITE);
-            
-            for (Card card : cards) {
-                if (card != null && !card.isMatched()) {
-                    shapeRenderer.rect(card.getX(), card.getY(), card.getWidth(), card.getHeight());
-                }
+        // ===== FASE 3: Dibujar bordes (debug/visual) =====
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(0.3f, 0.3f, 0.4f, 0.5f);
+        
+        for (Card card : cards) {
+            if (card != null && !card.isMatched()) {
+                shapeRenderer.rect(card.getX(), card.getY(), card.getWidth(), card.getHeight());
             }
-            
-            shapeRenderer.end();
         }
+        
+        shapeRenderer.end();
     }
     
     /**
@@ -220,7 +256,7 @@ public class GameGrid {
      */
     public Card getCardAt(float x, float y) {
         for (Card card : cards) {
-            if (card.contains(x, y)) {
+            if (card != null && card.contains(x, y)) {
                 return card;
             }
         }
@@ -235,9 +271,34 @@ public class GameGrid {
     }
     
     /**
+     * Obtiene el número de cartas emparejadas
+     */
+    public int getMatchedCount() {
+        int count = 0;
+        for (Card card : cards) {
+            if (card != null && card.isMatched()) {
+                count++;
+            }
+        }
+        return count / 2; // Retorna número de pares
+    }
+    
+    /**
+     * Verifica si todas las cartas están emparejadas
+     */
+    public boolean isAllMatched() {
+        for (Card card : cards) {
+            if (card != null && !card.isMatched()) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    /**
      * Libera recursos
      */
     public void dispose() {
-        // Las texturas son manejadas por AssetManager
+        // Las texturas son manejadas por AssetManager, no las liberamos aquí
     }
 }
