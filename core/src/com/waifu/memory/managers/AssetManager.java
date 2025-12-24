@@ -1,394 +1,416 @@
 package com.waifu.memory.managers;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.ObjectMap;
 import com.waifu.memory.utils.Constants;
 
 /**
- * Manager para cargar y gestionar assets gráficos.
- * Implementa lazy loading para optimizar memoria.
- *
- * Nota: libGDX NO soporta WebP de forma nativa en core. Si colocas .webp,
- * puede fallar al decodificar. Por eso aquí usamos PNG como formato principal.
- * Si necesitas WebP, considera usar gdx-webp extension o convertir a PNG.
+ * Manager para cargar y gestionar assets gráficos
+ * Implementa lazy loading y fallbacks visuales
  */
 public class AssetManager implements Disposable {
-
-    // ========== CONSTANTES ==========
-    private static final String[] SUPPORTED_EXTENSIONS = {"png", "jpg", "jpeg"};
-
-    // ========== ATLAS Y TEXTURAS ==========
-    // Atlas de UI (siempre cargado)
-    private TextureAtlas uiAtlas;
-
+    
     // Cache de texturas de personajes (lazy loading)
-    private final ObjectMap<String, Texture> characterTextures;
-
-    // Textura del reverso de carta
+    private ObjectMap<String, Texture> characterTextures;
+    
+    // Texturas esenciales (siempre cargadas)
     private Texture cardBackTexture;
-
-    // Marcos por rareza (0=Base, 1=☆, 2=☆☆, 3=☆☆☆)
-    private final Texture[] frameTextures;
-
-    // ========== ESTADO ==========
+    private Texture logoTexture;
+    
+    // Marcos por rareza
+    private Texture[] frameTextures;
+    
+    // Texturas placeholder (generadas dinámicamente)
+    private Texture placeholderCharacter;
+    private Texture placeholderCardBack;
+    private Texture[] placeholderFrames;
+    
+    // Estado
     private boolean essentialsLoaded;
-    private boolean framesLoaded;
-
-    // ========== CONSTRUCTOR ==========
+    
     public AssetManager() {
         characterTextures = new ObjectMap<>();
-        frameTextures = new Texture[Constants.ARTS_PER_CHARACTER]; // 4
+        frameTextures = new Texture[Constants.VARIANTS_PER_CHARACTER];
+        placeholderFrames = new Texture[Constants.VARIANTS_PER_CHARACTER];
         essentialsLoaded = false;
-        framesLoaded = false;
     }
-
-    // ========== CARGA DE ASSETS ESENCIALES ==========
-
+    
     /**
-     * Carga los assets esenciales (UI, reverso, marcos).
-     * Llamar en SplashScreen.
+     * Carga los assets esenciales
+     * Llamar en SplashScreen
      */
     public void loadEssentialAssets() {
         Gdx.app.log(Constants.TAG, "Cargando assets esenciales...");
-
-        try {
-            // Cargar atlas de UI (opcional)
-            loadUIAtlas();
-
-            // Cargar textura del reverso de carta (opcional pero recomendado)
-            loadCardBackTexture();
-
-            // Cargar marcos de rareza (opcional pero recomendado)
-            loadFrameTextures();
-
-            essentialsLoaded = true;
-            Gdx.app.log(Constants.TAG, "Assets esenciales cargados correctamente");
-
-        } catch (Exception e) {
-            Gdx.app.error(Constants.TAG, "Error cargando assets esenciales: " + e.getMessage(), e);
-            essentialsLoaded = false;
-        }
+        
+        // Generar placeholders primero (siempre disponibles)
+        generatePlaceholders();
+        
+        // Intentar cargar assets reales
+        loadRealAssets();
+        
+        essentialsLoaded = true;
+        Gdx.app.log(Constants.TAG, "Assets esenciales listos");
     }
-
+    
     /**
-     * Carga el atlas de UI
+     * Genera texturas placeholder para cuando no existan los assets reales
      */
-    private void loadUIAtlas() {
-        String atlasPath = Constants.PATH_UI + Constants.ATLAS_UI;
-        FileHandle atlasFile = Gdx.files.internal(atlasPath);
-
-        if (atlasFile.exists()) {
-            uiAtlas = new TextureAtlas(atlasFile);
-            Gdx.app.log(Constants.TAG, "Atlas UI cargado: " + atlasPath);
-        } else {
-            Gdx.app.log(Constants.TAG, "Atlas UI no encontrado (opcional): " + atlasPath);
-        }
-    }
-
-    /**
-     * Carga la textura del reverso de carta
-     */
-    private void loadCardBackTexture() {
-        String cardBackPath = Constants.PATH_UI + "card_back.png";
-        FileHandle cardBackFile = Gdx.files.internal(cardBackPath);
-
-        if (cardBackFile.exists()) {
-            cardBackTexture = new Texture(cardBackFile);
-            cardBackTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-            Gdx.app.log(Constants.TAG, "Card back cargado: " + cardBackPath);
-        } else {
-            Gdx.app.log(Constants.TAG, "Card back no encontrado: " + cardBackPath);
-        }
-    }
-
-    /**
-     * Carga las texturas de marcos por rareza
-     */
-    private void loadFrameTextures() {
-        String[] frameFiles = {
-            Constants.FRAME_BASE,   // 0 = Base
-            Constants.FRAME_STAR1,  // 1 = ☆
-            Constants.FRAME_STAR2,  // 2 = ☆☆
-            Constants.FRAME_STAR3   // 3 = ☆☆☆
+    private void generatePlaceholders() {
+        int size = Constants.ASSET_SIZE_CHARACTERS;
+        
+        // Placeholder para personajes (gris con patrón)
+        placeholderCharacter = createPlaceholderTexture(size, 
+            new Color(0.3f, 0.3f, 0.4f, 1f), "?");
+        
+        // Placeholder para card back (azul oscuro)
+        placeholderCardBack = createPlaceholderTexture(size,
+            new Color(0.15f, 0.15f, 0.3f, 1f), "CARD");
+        
+        // Placeholders para marcos (colores por rareza)
+        Color[] frameColors = {
+            new Color(0.4f, 0.4f, 0.45f, 1f),  // Base - Gris
+            new Color(0.7f, 0.45f, 0.2f, 1f),  // ☆ - Bronce
+            new Color(0.7f, 0.7f, 0.75f, 1f),  // ☆☆ - Plata
+            new Color(0.9f, 0.75f, 0.1f, 1f)   // ☆☆☆ - Oro
         };
-
-        int loadedCount = 0;
-
-        for (int i = 0; i < frameFiles.length; i++) {
-            String path = Constants.PATH_FRAMES + frameFiles[i];
-            FileHandle fileHandle = Gdx.files.internal(path);
-
-            if (!fileHandle.exists()) {
-                frameTextures[i] = null;
-                Gdx.app.log(Constants.TAG, "Marco no encontrado (opcional): " + path);
-                continue;
-            }
-
-            try {
-                Texture texture = new Texture(fileHandle);
-                texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-                frameTextures[i] = texture;
-                loadedCount++;
-                Gdx.app.log(Constants.TAG, "Marco cargado: " + frameFiles[i]);
-            } catch (Exception e) {
-                frameTextures[i] = null;
-                Gdx.app.error(Constants.TAG, "Error cargando marco: " + path, e);
-            }
+        
+        for (int i = 0; i < Constants.VARIANTS_PER_CHARACTER; i++) {
+            placeholderFrames[i] = createFramePlaceholder(size, frameColors[i], i);
         }
-
-        framesLoaded = true;
-        Gdx.app.log(Constants.TAG, "Marcos cargados: " + loadedCount + "/" + frameFiles.length);
+        
+        Gdx.app.log(Constants.TAG, "Placeholders generados");
     }
-
-    // ========== GETTERS DE ASSETS BÁSICOS ==========
-
+    
     /**
-     * Obtiene una región del atlas de UI
-     * @param name Nombre de la región
-     * @return TextureRegion o null si no existe
+     * Crea una textura placeholder simple
      */
-    public TextureRegion getUIRegion(String name) {
-        if (uiAtlas == null) return null;
-        return uiAtlas.findRegion(name);
-    }
-
-    /**
-     * Obtiene la textura del reverso de carta
-     */
-    public Texture getCardBackTexture() {
-        return cardBackTexture;
-    }
-
-    /**
-     * Obtiene la textura del marco por rareza/variante
-     * @param rarity 0=Base, 1=☆, 2=☆☆, 3=☆☆☆
-     * @return Textura del marco o null si no existe
-     */
-    public Texture getFrameTexture(int rarity) {
-        if (rarity < 0 || rarity >= frameTextures.length) {
-            return null;
+    private Texture createPlaceholderTexture(int size, Color color, String label) {
+        Pixmap pixmap = new Pixmap(size, size, Pixmap.Format.RGBA8888);
+        
+        // Fondo
+        pixmap.setColor(color);
+        pixmap.fill();
+        
+        // Borde
+        pixmap.setColor(Color.WHITE);
+        pixmap.drawRectangle(0, 0, size, size);
+        pixmap.drawRectangle(1, 1, size - 2, size - 2);
+        
+        // Patrón diagonal
+        pixmap.setColor(new Color(1f, 1f, 1f, 0.1f));
+        for (int i = 0; i < size * 2; i += 20) {
+            pixmap.drawLine(i, 0, 0, i);
         }
-        return frameTextures[rarity];
-    }
-
-    // ========== CARGA DE PERSONAJES (LAZY LOADING) ==========
-
-    /**
-     * Carga una textura de personaje (lazy loading)
-     * @param characterId ID del personaje (0-49)
-     * @param variant Variante (0=Base, 1=☆, 2=☆☆, 3=☆☆☆)
-     * @return La textura cargada o null si no existe
-     */
-    public Texture getCharacterTexture(int characterId, int variant) {
-        // Validar parámetros
-        if (characterId < 0 || characterId >= Constants.TOTAL_CHARACTERS) {
-            Gdx.app.error(Constants.TAG, "ID de personaje inválido: " + characterId);
-            return null;
-        }
-
-        if (variant < 0 || variant >= Constants.ARTS_PER_CHARACTER) {
-            Gdx.app.error(Constants.TAG, "Variante inválida: " + variant);
-            return null;
-        }
-
-        String key = buildCharacterKey(characterId, variant);
-
-        // Si ya está en cache, devolverla
-        if (characterTextures.containsKey(key)) {
-            return characterTextures.get(key);
-        }
-
-        // Construir path base del archivo
-        // Formato: characters/char_XX_V.png
-        String basePath = Constants.PATH_CHARACTERS 
-            + "char_" + String.format("%02d", characterId) + "_" + variant;
-
-        // Intentar cargar con las extensiones soportadas
-        Texture texture = loadTextureBestEffort(basePath);
-
-        if (texture == null) {
-            Gdx.app.log(Constants.TAG, "Textura de personaje no encontrada: " + basePath);
-            return null;
-        }
-
-        characterTextures.put(key, texture);
-        Gdx.app.log(Constants.TAG, "Textura cargada: " + key);
+        
+        Texture texture = new Texture(pixmap);
+        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        pixmap.dispose();
+        
         return texture;
     }
-
+    
     /**
-     * Intenta cargar una textura probando diferentes extensiones
-     * @param basePathNoExt Path sin extensión
-     * @return Texture cargada o null si falla
+     * Crea un placeholder de marco con borde decorativo
      */
-    private Texture loadTextureBestEffort(String basePathNoExt) {
-        for (String ext : SUPPORTED_EXTENSIONS) {
-            String path = basePathNoExt + "." + ext;
-            FileHandle fileHandle = Gdx.files.internal(path);
-
-            if (!fileHandle.exists()) {
-                continue;
+    private Texture createFramePlaceholder(int size, Color color, int variant) {
+        Pixmap pixmap = new Pixmap(size, size, Pixmap.Format.RGBA8888);
+        
+        // Transparente en el centro
+        pixmap.setColor(Color.CLEAR);
+        pixmap.fill();
+        
+        int borderWidth = 20;
+        
+        // Borde exterior
+        pixmap.setColor(color);
+        
+        // Top
+        pixmap.fillRectangle(0, 0, size, borderWidth);
+        // Bottom
+        pixmap.fillRectangle(0, size - borderWidth, size, borderWidth);
+        // Left
+        pixmap.fillRectangle(0, 0, borderWidth, size);
+        // Right
+        pixmap.fillRectangle(size - borderWidth, 0, borderWidth, size);
+        
+        // Esquinas decorativas
+        pixmap.setColor(Color.WHITE);
+        int cornerSize = 30;
+        // Top-left
+        pixmap.fillRectangle(0, 0, cornerSize, 5);
+        pixmap.fillRectangle(0, 0, 5, cornerSize);
+        // Top-right
+        pixmap.fillRectangle(size - cornerSize, 0, cornerSize, 5);
+        pixmap.fillRectangle(size - 5, 0, 5, cornerSize);
+        // Bottom-left
+        pixmap.fillRectangle(0, size - 5, cornerSize, 5);
+        pixmap.fillRectangle(0, size - cornerSize, 5, cornerSize);
+        // Bottom-right
+        pixmap.fillRectangle(size - cornerSize, size - 5, cornerSize, 5);
+        pixmap.fillRectangle(size - 5, size - cornerSize, 5, cornerSize);
+        
+        // Indicador de estrellas en la parte inferior
+        if (variant > 0) {
+            int starY = size - borderWidth + 5;
+            int starSize = 10;
+            int totalWidth = variant * (starSize + 5);
+            int startX = (size - totalWidth) / 2;
+            
+            pixmap.setColor(Color.WHITE);
+            for (int s = 0; s < variant; s++) {
+                int x = startX + s * (starSize + 5);
+                pixmap.fillRectangle(x, starY, starSize, starSize);
             }
-
-            try {
-                Texture texture = new Texture(fileHandle);
-                texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        }
+        
+        Texture texture = new Texture(pixmap);
+        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        pixmap.dispose();
+        
+        return texture;
+    }
+    
+    /**
+     * Intenta cargar los assets reales desde archivos
+     */
+    private void loadRealAssets() {
+        // Card back
+        String cardBackPath = Constants.PATH_UI + Constants.UI_CARD_BACK;
+        if (fileExists(cardBackPath)) {
+            cardBackTexture = loadTexture(cardBackPath);
+            Gdx.app.log(Constants.TAG, "Card back cargado");
+        } else {
+            Gdx.app.log(Constants.TAG, "Card back no encontrado, usando placeholder");
+        }
+        
+        // Logo
+        String logoPath = Constants.PATH_UI + Constants.UI_LOGO;
+        if (fileExists(logoPath)) {
+            logoTexture = loadTexture(logoPath);
+            Gdx.app.log(Constants.TAG, "Logo cargado");
+        }
+        
+        // Marcos
+        for (int i = 0; i < Constants.VARIANTS_PER_CHARACTER; i++) {
+            String framePath = Constants.getFramePath(i);
+            if (fileExists(framePath)) {
+                frameTextures[i] = loadTexture(framePath);
+                Gdx.app.log(Constants.TAG, "Marco " + i + " cargado");
+            }
+        }
+    }
+    
+    /**
+     * Carga una textura desde archivo
+     */
+    private Texture loadTexture(String path) {
+        try {
+            Texture texture = new Texture(Gdx.files.internal(path));
+            texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            return texture;
+        } catch (Exception e) {
+            Gdx.app.error(Constants.TAG, "Error cargando: " + path + " - " + e.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Verifica si un archivo existe
+     */
+    private boolean fileExists(String path) {
+        return Gdx.files.internal(path).exists();
+    }
+    
+    // ══════════════════════════════════════════════════════════
+    // GETTERS CON FALLBACK
+    // ══════════════════════════════════════════════════════════
+    
+    /**
+     * Obtiene la textura del reverso de carta (nunca null)
+     */
+    public Texture getCardBackTexture() {
+        return cardBackTexture != null ? cardBackTexture : placeholderCardBack;
+    }
+    
+    /**
+     * Obtiene la textura del logo (puede ser null)
+     */
+    public Texture getLogoTexture() {
+        return logoTexture;
+    }
+    
+    /**
+     * Obtiene el marco para una variante (nunca null)
+     */
+    public Texture getFrameTexture(int variant) {
+        if (variant < 0 || variant >= Constants.VARIANTS_PER_CHARACTER) {
+            variant = 0;
+        }
+        
+        Texture real = frameTextures[variant];
+        return real != null ? real : placeholderFrames[variant];
+    }
+    
+    /**
+     * Verifica si existe el marco real (no placeholder)
+     */
+    public boolean hasRealFrame(int variant) {
+        if (variant < 0 || variant >= Constants.VARIANTS_PER_CHARACTER) {
+            return false;
+        }
+        return frameTextures[variant] != null;
+    }
+    
+    // ══════════════════════════════════════════════════════════
+    // PERSONAJES - LAZY LOADING
+    // ══════════════════════════════════════════════════════════
+    
+    /**
+     * Obtiene textura de personaje con lazy loading (nunca null)
+     */
+    public Texture getCharacterTexture(int characterId, int variant) {
+        // Validar
+        if (characterId < 0 || characterId >= Constants.TOTAL_CHARACTERS ||
+            variant < 0 || variant >= Constants.VARIANTS_PER_CHARACTER) {
+            return placeholderCharacter;
+        }
+        
+        String key = characterId + "_" + variant;
+        
+        // Verificar cache
+        if (characterTextures.containsKey(key)) {
+            Texture cached = characterTextures.get(key);
+            return cached != null ? cached : placeholderCharacter;
+        }
+        
+        // Intentar cargar
+        String path = Constants.getCharacterPath(characterId, variant);
+        
+        if (fileExists(path)) {
+            Texture texture = loadTexture(path);
+            characterTextures.put(key, texture);
+            
+            if (texture != null) {
+                Gdx.app.log(Constants.TAG, "Personaje cargado: " + key);
                 return texture;
-            } catch (Exception e) {
-                Gdx.app.error(Constants.TAG, "Error decodificando textura: " + path, e);
             }
         }
-        return null;
+        
+        // Marcar como intentado (null en cache = no existe)
+        characterTextures.put(key, null);
+        return placeholderCharacter;
     }
-
+    
     /**
-     * Genera la clave de cache para un personaje
+     * Verifica si existe la textura real de un personaje
      */
-    private String buildCharacterKey(int characterId, int variant) {
-        return "char_" + characterId + "_" + variant;
+    public boolean hasRealCharacterTexture(int characterId, int variant) {
+        String path = Constants.getCharacterPath(characterId, variant);
+        return fileExists(path);
     }
-
-    // ========== PRECARGA Y DESCARGA ==========
-
+    
     /**
-     * Precarga las texturas necesarias para un nivel
-     * @param characterIds Array de IDs de personajes a usar
-     */
-    public void preloadLevelCharacters(int[] characterIds) {
-        Gdx.app.log(Constants.TAG, "Precargando " + characterIds.length + " personajes para nivel...");
-        for (int id : characterIds) {
-            // Solo cargar variante base (0) para gameplay
-            getCharacterTexture(id, 0);
-        }
-    }
-
-    /**
-     * Descarga una textura de personaje para liberar memoria
+     * Descarga una textura de personaje
      */
     public void unloadCharacterTexture(int characterId, int variant) {
-        String key = buildCharacterKey(characterId, variant);
-
+        String key = characterId + "_" + variant;
+        
         if (characterTextures.containsKey(key)) {
             Texture texture = characterTextures.get(key);
             if (texture != null) {
                 texture.dispose();
             }
             characterTextures.remove(key);
-            Gdx.app.log(Constants.TAG, "Textura descargada: " + key);
         }
     }
-
+    
     /**
      * Descarga todas las variantes de un personaje
      */
-    public void unloadAllVariantsOfCharacter(int characterId) {
-        for (int variant = 0; variant < Constants.ARTS_PER_CHARACTER; variant++) {
-            unloadCharacterTexture(characterId, variant);
+    public void unloadCharacter(int characterId) {
+        for (int v = 0; v < Constants.VARIANTS_PER_CHARACTER; v++) {
+            unloadCharacterTexture(characterId, v);
         }
     }
-
+    
     /**
-     * Descarga todas las texturas de personajes
+     * Descarga todos los personajes del cache
      */
-    public void unloadAllCharacterTextures() {
+    public void unloadAllCharacters() {
         for (Texture texture : characterTextures.values()) {
             if (texture != null) {
                 texture.dispose();
             }
         }
         characterTextures.clear();
-        Gdx.app.log(Constants.TAG, "Todas las texturas de personajes descargadas");
+        Gdx.app.log(Constants.TAG, "Todos los personajes descargados");
     }
-
-    // ========== ESTADO Y DEBUG ==========
-
+    
     /**
-     * Verifica si los assets esenciales están cargados
+     * Precarga personajes para un nivel
      */
+    public void preloadCharactersForLevel(int[] characterIds) {
+        for (int id : characterIds) {
+            getCharacterTexture(id, 0); // Solo variante base para gameplay
+        }
+    }
+    
+    // ══════════════════════════════════════════════════════════
+    // INFO Y DEBUG
+    // ══════════════════════════════════════════════════════════
+    
     public boolean isEssentialLoaded() {
         return essentialsLoaded;
     }
-
-    /**
-     * Verifica si los marcos están cargados
-     */
-    public boolean areFramesLoaded() {
-        return framesLoaded;
-    }
-
-    /**
-     * Verifica si hay al menos un marco cargado
-     */
-    public boolean hasAnyFrameLoaded() {
-        for (Texture frame : frameTextures) {
-            if (frame != null) return true;
-        }
-        return false;
-    }
-
-    /**
-     * Obtiene el número de texturas de personajes actualmente cargadas
-     */
-    public int getLoadedCharacterTextureCount() {
+    
+    public int getCachedCharacterCount() {
         return characterTextures.size;
     }
-
-    /**
-     * Obtiene información de memoria para debug
-     */
-    public String getMemoryInfo() {
-        int framesCount = 0;
-        for (Texture frame : frameTextures) {
-            if (frame != null) framesCount++;
+    
+    public String getDebugInfo() {
+        int realFrames = 0;
+        for (Texture t : frameTextures) {
+            if (t != null) realFrames++;
         }
-
+        
         return String.format(
-            "Personajes: %d | Marcos: %d/%d | CardBack: %s | UI Atlas: %s",
-            characterTextures.size,
-            framesCount,
-            frameTextures.length,
-            cardBackTexture != null ? "Sí" : "No",
-            uiAtlas != null ? "Sí" : "No"
+            "Assets: CardBack=%s, Logo=%s, Frames=%d/4, Characters=%d cached",
+            cardBackTexture != null ? "OK" : "PLACEHOLDER",
+            logoTexture != null ? "OK" : "NO",
+            realFrames,
+            characterTextures.size
         );
     }
-
-    // ========== DISPOSE ==========
-
+    
     @Override
     public void dispose() {
         Gdx.app.log(Constants.TAG, "Disposing AssetManager...");
-
-        // Liberar atlas UI
-        if (uiAtlas != null) {
-            uiAtlas.dispose();
-            uiAtlas = null;
+        
+        // Texturas reales
+        if (cardBackTexture != null) cardBackTexture.dispose();
+        if (logoTexture != null) logoTexture.dispose();
+        
+        for (Texture t : frameTextures) {
+            if (t != null) t.dispose();
         }
-
-        // Liberar card back
-        if (cardBackTexture != null) {
-            cardBackTexture.dispose();
-            cardBackTexture = null;
+        
+        // Placeholders
+        if (placeholderCharacter != null) placeholderCharacter.dispose();
+        if (placeholderCardBack != null) placeholderCardBack.dispose();
+        
+        for (Texture t : placeholderFrames) {
+            if (t != null) t.dispose();
         }
-
-        // Liberar marcos
-        for (int i = 0; i < frameTextures.length; i++) {
-            if (frameTextures[i] != null) {
-                frameTextures[i].dispose();
-                frameTextures[i] = null;
-            }
-        }
-
-        // Liberar texturas de personajes
-        unloadAllCharacterTextures();
-
+        
+        // Cache de personajes
+        unloadAllCharacters();
+        
         essentialsLoaded = false;
-        framesLoaded = false;
-
-        Gdx.app.log(Constants.TAG, "AssetManager disposed correctamente");
+        Gdx.app.log(Constants.TAG, "AssetManager disposed");
     }
 }
