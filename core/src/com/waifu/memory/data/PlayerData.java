@@ -196,10 +196,6 @@ public class PlayerData {
         return true;
     }
 
-    public boolean unlockCharacterLevel(int characterId) {
-        return unlockNextVariant(characterId);
-    }
-
     public float getGalleryCompletionPercent() {
         int totalPossible = Constants.TOTAL_CHARACTERS * Constants.VARIANTS_PER_CHARACTER;
         if (totalPossible <= 0) return 0f;
@@ -210,22 +206,6 @@ public class PlayerData {
             if (value != null && value) unlocked++;
         }
         return (float) unlocked / totalPossible * 100f;
-    }
-
-    public int getUnlockedCharacterCount() {
-        int count = 0;
-        for (int c = 0; c < Constants.TOTAL_CHARACTERS; c++) {
-            if (isVariantUnlocked(c, 0)) count++;
-        }
-        return count;
-    }
-
-    public int getFullyUnlockedCharacterCount() {
-        int count = 0;
-        for (int c = 0; c < Constants.TOTAL_CHARACTERS; c++) {
-            if (getCharacterUnlockLevel(c) >= Constants.VARIANTS_PER_CHARACTER) count++;
-        }
-        return count;
     }
 
     public boolean canClaimDailyReward() {
