@@ -46,6 +46,8 @@ public class GameScreen extends BaseScreen {
     private int pairsFound;
     private int pcoinsEarned;
 
+    private int totalPairs;
+
     private int cardsFlippedSinceShuffle;
     private boolean shuffleEnabled;
     private int shuffleInterval;
@@ -103,10 +105,6 @@ public class GameScreen extends BaseScreen {
         victoryReward = null;
 
         setupInput();
-
-        Gdx.app.log(Constants.TAG, "Nivel " + levelNumber + " cfg: grid=" + levelConfig.gridSize +
-            " shuffle=" + levelConfig.shuffle + " interval=" + levelConfig.shuffleInterval +
-            " pool=" + levelConfig.poolCount + " mult=" + levelConfig.rewardMultiplier);
     }
 
     public com.waifu.memory.managers.AssetManager getAssetManager() {
@@ -124,6 +122,8 @@ public class GameScreen extends BaseScreen {
         int[] pool = buildPool(levelConfig.poolCount);
 
         gameGrid = new GameGrid(levelConfig.gridSize, this, pool);
+
+        totalPairs = levelConfig.totalPairs();
 
         firstCard = null;
         secondCard = null;
@@ -311,7 +311,6 @@ public class GameScreen extends BaseScreen {
 
             @Override
             public void onAdFailed() {
-                Gdx.app.log(Constants.TAG, "Ad failed to show");
             }
         });
     }
@@ -333,7 +332,6 @@ public class GameScreen extends BaseScreen {
 
             @Override
             public void onAdFailed() {
-                Gdx.app.log(Constants.TAG, "Ad failed to show");
             }
         });
     }
@@ -357,7 +355,6 @@ public class GameScreen extends BaseScreen {
 
             @Override
             public void onAdFailed() {
-                Gdx.app.log(Constants.TAG, "Ad failed to show");
             }
         });
     }
