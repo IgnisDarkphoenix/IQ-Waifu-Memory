@@ -1,7 +1,6 @@
 package com.waifu.memory;
 
 import android.os.Bundle;
-
 import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import com.google.android.gms.ads.AdError;
@@ -118,6 +117,10 @@ public class AndroidLauncher extends AndroidApplication implements IQWaifuMemory
         runOnUiThread(() -> {
             if (interstitialAd == null) {
                 loadInterstitialAd();
+                if (exitPendingFinish) {
+                    exitPendingFinish = false;
+                    finish();
+                }
                 return;
             }
 
@@ -126,7 +129,6 @@ public class AndroidLauncher extends AndroidApplication implements IQWaifuMemory
                 public void onAdDismissedFullScreenContent() {
                     interstitialAd = null;
                     loadInterstitialAd();
-
                     if (exitPendingFinish) {
                         exitPendingFinish = false;
                         finish();
@@ -137,7 +139,6 @@ public class AndroidLauncher extends AndroidApplication implements IQWaifuMemory
                 public void onAdFailedToShowFullScreenContent(AdError adError) {
                     interstitialAd = null;
                     loadInterstitialAd();
-
                     if (exitPendingFinish) {
                         exitPendingFinish = false;
                         finish();
@@ -158,13 +159,11 @@ public class AndroidLauncher extends AndroidApplication implements IQWaifuMemory
                 gameInstance.getSaveManager().getPlayerData() != null &&
                 gameInstance.getSaveManager().getPlayerData().shouldShowExitInterstitial()) {
 
-                if (interstitialAd != null) {
-                    exitPendingFinish = true;
-                    showInterstitialAd();
-                    gameInstance.getSaveManager().getPlayerData().recordInterstitialShown();
-                    gameInstance.getSaveManager().save();
-                    return;
-                }
+                exitPendingFinish = true;
+                showInterstitialAd();
+                gameInstance.getSaveManager().getPlayerData().recordInterstitialShown();
+                gameInstance.getSaveManager().save();
+                return;
             }
         } catch (Exception ignored) {
         }
