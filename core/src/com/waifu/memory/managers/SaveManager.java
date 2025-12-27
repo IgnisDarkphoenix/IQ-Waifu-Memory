@@ -6,6 +6,7 @@ import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonWriter;
 import com.waifu.memory.data.PlayerData;
 import com.waifu.memory.utils.Constants;
+import java.util.HashMap;
 
 public class SaveManager {
 
@@ -30,20 +31,22 @@ public class SaveManager {
             String jsonData = prefs.getString(KEY_PLAYER_DATA, "");
             if (jsonData == null || jsonData.isEmpty()) {
                 playerData = new PlayerData();
+                ensureMaps();
                 return;
             }
 
             PlayerData loaded = json.fromJson(PlayerData.class, jsonData);
             if (loaded == null) {
                 loadBackupOrReset();
+                ensureMaps();
                 return;
             }
 
             playerData = loaded;
-            if (playerData.galleryUnlocks == null) playerData.galleryUnlocks = new java.util.HashMap<>();
+            ensureMaps();
         } catch (Exception e) {
-            Gdx.app.error(Constants.TAG, "Load failed: " + e.getMessage());
             loadBackupOrReset();
+            ensureMaps();
         }
     }
 
@@ -54,13 +57,16 @@ public class SaveManager {
                 PlayerData loaded = json.fromJson(PlayerData.class, backup);
                 if (loaded != null) {
                     playerData = loaded;
-                    if (playerData.galleryUnlocks == null) playerData.galleryUnlocks = new java.util.HashMap<>();
                     return;
                 }
             }
         } catch (Exception ignored) {
         }
         playerData = new PlayerData();
+    }
+
+    private void ensureMaps() {
+        if (playerData.galleryUnlocks == null) playerData.galleryUnlocks = new HashMap<>();
     }
 
     public void save() {
@@ -73,8 +79,7 @@ public class SaveManager {
             String jsonData = json.toJson(playerData);
             prefs.putString(KEY_PLAYER_DATA, jsonData);
             prefs.flush();
-        } catch (Exception e) {
-            Gdx.app.error(Constants.TAG, "Save failed: " + e.getMessage());
+        } catch (Exception ignored) {
         }
     }
 
