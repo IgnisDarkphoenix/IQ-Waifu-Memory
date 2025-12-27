@@ -9,15 +9,19 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.waifu.memory.IQWaifuMemory;
+import com.waifu.memory.data.LevelConfig;
+import com.waifu.memory.data.LevelDatabase;
 import com.waifu.memory.entities.Card;
 import com.waifu.memory.entities.GameGrid;
+import com.waifu.memory.systems.EconomyManager;
 import com.waifu.memory.utils.Constants;
 
 public class GameScreen extends BaseScreen {
 
-    private int levelNumber;
-    private int gridSize;
-    private int totalPairs;
+    private final int levelNumber;
+
+    private final LevelDatabase levelDatabase;
+    private final LevelConfig levelConfig;
 
     private enum GameState {
         PLAYING,
@@ -41,13 +45,17 @@ public class GameScreen extends BaseScreen {
 
     private int pairsFound;
     private int pcoinsEarned;
-    private int cardsFlippedSinceShuffle;
 
+    private int cardsFlippedSinceShuffle;
     private boolean shuffleEnabled;
+    private int shuffleInterval;
 
     private boolean hintEnabled;
     private int hintsLeft;
     private Rectangle hintButton;
+
+    private EconomyManager.RewardBreakdown victoryReward;
+    private boolean rewardedDoubleClaimed;
 
     private BitmapFont hudFont;
     private BitmapFont bigFont;
@@ -68,7 +76,10 @@ public class GameScreen extends BaseScreen {
         this.levelNumber = levelNumber;
         this.gameState = GameState.PLAYING;
 
-        setupLevel();
+        this.levelDatabase = new LevelDatabase();
+        this.levelConfig = levelDatabase.get(levelNumber);
+
+        setupLevelFromConfig();
 
         hudFont = new BitmapFont();
         hudFont.getData().setScale(2.5f);
@@ -82,47 +93,61 @@ public class GameScreen extends BaseScreen {
         shapeRenderer = new ShapeRenderer();
         touchPos = new Vector3();
 
-        gameGrid = new GameGrid(gridSize, this);
-
-        firstCard = null;
-        secondCard = null;
-        checkTimer = 0f;
-        pairsFound = 0;
-        pcoinsEarned = 0;
-        cardsFlippedSinceShuffle = 0;
-        showingPopup = false;
-        timerWarning = false;
-
         pauseButton = new Rectangle(40, Constants.WORLD_HEIGHT - 100, 80, 80);
 
-        hintEnabled = Constants.isHintsEnabledForGrid(gridSize);
+        hintEnabled = Constants.isHintsEnabledForGrid(levelConfig.gridSize);
         hintsLeft = hintEnabled ? Constants.HINTS_PER_MATCH : 0;
         hintButton = new Rectangle(Constants.WORLD_WIDTH - 220f, Constants.WORLD_HEIGHT - 170f, 180f, 45f);
 
+        rewardedDoubleClaimed = false;
+        victoryReward = null;
+
         setupInput();
+
+        Gdx.app.log(Constants.TAG, "Nivel " + levelNumber + " cfg: grid=" + levelConfig.gridSize +
+            " shuffle=" + levelConfig.shuffle + " interval=" + levelConfig.shuffleInterval +
+            " pool=" + levelConfig.poolCount + " mult=" + levelConfig.rewardMultiplier);
     }
 
     public com.waifu.memory.managers.AssetManager getAssetManager() {
         return assetManager;
     }
 
-    private void setupLevel() {
-        if (levelNumber <= Constants.LEVELS_EASY_END) {
-            gridSize = Constants.GRID_EASY;
-            shuffleEnabled = false;
-            maxTime = getPlayerData().getCurrentBaseTime() + Constants.TIME_BONUS_4X4;
-        } else if (levelNumber <= Constants.LEVELS_NORMAL_END) {
-            gridSize = Constants.GRID_NORMAL;
-            shuffleEnabled = levelNumber >= 45;
-            maxTime = getPlayerData().getCurrentBaseTime() + Constants.TIME_BONUS_6X6;
-        } else {
-            gridSize = Constants.GRID_HARD;
-            shuffleEnabled = true;
-            maxTime = getPlayerData().getCurrentBaseTime() + Constants.TIME_BONUS_8X8;
-        }
+    private void setupLevelFromConfig() {
+        shuffleEnabled = levelConfig.shuffle;
+        shuffleInterval = levelConfig.shuffleInterval > 0 ? levelConfig.shuffleInterval : Constants.SHUFFLE_INTERVAL;
 
-        totalPairs = (gridSize * gridSize) / 2;
+        int baseTime = getPlayerData().getCurrentBaseTime();
+        maxTime = baseTime + levelConfig.timeBonusSeconds;
         gameTime = maxTime;
+
+        int[] pool = buildPool(levelConfig.poolCount);
+
+        gameGrid = new GameGrid(levelConfig.gridSize, this, pool);
+
+        firstCard = null;
+        secondCard = null;
+        checkTimer = 0f;
+
+        pairsFound = 0;
+        pcoinsEarned = 0;
+
+        cardsFlippedSinceShuffle = 0;
+        showingPopup = false;
+        timerWarning = false;
+    }
+
+    private int[] buildPool(int poolCount) {
+        int pairsNeeded = levelConfig.totalPairs();
+        int c = poolCount;
+
+        if (c < pairsNeeded) c = pairsNeeded;
+        if (c < 1) c = 1;
+        if (c > Constants.TOTAL_CHARACTERS) c = Constants.TOTAL_CHARACTERS;
+
+        int[] pool = new int[c];
+        for (int i = 0; i < c; i++) pool[i] = i;
+        return pool;
     }
 
     private void setupInput() {
@@ -265,15 +290,22 @@ public class GameScreen extends BaseScreen {
     }
 
     private void showRewardedAdForDouble() {
+        if (rewardedDoubleClaimed) return;
+        if (gameState != GameState.VICTORY) return;
+        if (victoryReward == null) return;
+
         if (!game.hasAdHandler() || !game.getAdHandler().isRewardedAdLoaded()) return;
 
         game.getAdHandler().showRewardedAd(new IQWaifuMemory.RewardCallback() {
             @Override
             public void onRewardEarned() {
-                int bonus = pcoinsEarned;
-                pcoinsEarned *= 2;
-                getPlayerData().addPcoins(bonus);
+                int extra = EconomyManager.applyRewardedDoubleExtra(victoryReward.total);
+                getPlayerData().addPcoins(extra);
                 getPlayerData().recordRewardedWatched();
+
+                pcoinsEarned = victoryReward.totalWithRewardedDouble();
+                rewardedDoubleClaimed = true;
+
                 saveProgress();
             }
 
@@ -360,13 +392,12 @@ public class GameScreen extends BaseScreen {
             secondCard.setMatched(true);
             pairsFound++;
 
-            int pairValue = getPlayerData().getCurrentPairValue();
-            pcoinsEarned += pairValue;
+            pcoinsEarned = pairsFound * getPlayerData().getCurrentPairValue();
 
             audioManager.playMatch();
             audioManager.playCoinCollect();
 
-            if (pairsFound >= totalPairs) {
+            if (gameGrid.isAllMatched()) {
                 onVictory();
                 return;
             }
@@ -376,7 +407,7 @@ public class GameScreen extends BaseScreen {
             audioManager.playNoMatch();
         }
 
-        if (shuffleEnabled && cardsFlippedSinceShuffle >= Constants.SHUFFLE_INTERVAL) {
+        if (shuffleEnabled && cardsFlippedSinceShuffle >= shuffleInterval) {
             gameGrid.shuffleUnmatched();
             cardsFlippedSinceShuffle = 0;
         }
@@ -390,16 +421,15 @@ public class GameScreen extends BaseScreen {
         gameState = GameState.VICTORY;
         audioManager.playVictory();
 
-        int timeBonus = (int) (gameTime / 2f);
-        pcoinsEarned += timeBonus;
+        victoryReward = EconomyManager.calculateVictoryReward(
+            getPlayerData(),
+            levelConfig,
+            pairsFound,
+            gameTime
+        );
 
-        float multiplier = getDifficultyMultiplier();
-        if (multiplier > 1f) {
-            int bonusMultiplier = (int) (pcoinsEarned * (multiplier - 1f));
-            pcoinsEarned += bonusMultiplier;
-        }
-
-        getPlayerData().addPcoins(pcoinsEarned);
+        pcoinsEarned = victoryReward.total;
+        getPlayerData().addPcoins(victoryReward.total);
 
         if (levelNumber > getPlayerData().maxLevelCompleted) {
             getPlayerData().maxLevelCompleted = levelNumber;
@@ -421,12 +451,6 @@ public class GameScreen extends BaseScreen {
         saveProgress();
 
         showDefeatPopup();
-    }
-
-    private float getDifficultyMultiplier() {
-        if (levelNumber <= Constants.LEVELS_EASY_END) return Constants.MULTIPLIER_EASY;
-        if (levelNumber <= Constants.LEVELS_NORMAL_END) return Constants.MULTIPLIER_NORMAL;
-        return Constants.MULTIPLIER_HARD;
     }
 
     private void showVictoryPopup() {
