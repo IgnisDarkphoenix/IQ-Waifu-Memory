@@ -1,9 +1,9 @@
 package com.waifu.memory.data;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.utils.IntMap;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
-import com.badlogic.gdx.utils.IntMap;
 import com.waifu.memory.utils.Constants;
 
 public class HdLinksDatabase {
@@ -17,7 +17,6 @@ public class HdLinksDatabase {
 
         String path = Constants.HD_LINKS_JSON_PATH;
         if (!Gdx.files.internal(path).exists()) {
-            Gdx.app.log(Constants.TAG, "hd_links.json no existe: " + path);
             return;
         }
 
@@ -41,10 +40,7 @@ public class HdLinksDatabase {
                 } catch (Exception ignored) {
                 }
             }
-
-            Gdx.app.log(Constants.TAG, "HdLinks cargados: " + links.size);
-        } catch (Exception e) {
-            Gdx.app.error(Constants.TAG, "Error leyendo hd_links.json: " + e.getMessage());
+        } catch (Exception ignored) {
         }
     }
 
