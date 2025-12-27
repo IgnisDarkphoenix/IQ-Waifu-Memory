@@ -343,18 +343,6 @@ public class Card {
         return bounds;
     }
 
-    public Texture getFrontTexture() {
-        return frontTexture;
-    }
-
-    public Texture getBackTexture() {
-        return backTexture;
-    }
-
-    public Texture getFrameTexture() {
-        return frameTexture;
-    }
-
     public boolean hasFrontTexture() {
         return frontTexture != null;
     }
