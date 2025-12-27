@@ -11,147 +11,129 @@ import com.badlogic.gdx.math.Vector3;
 import com.waifu.memory.IQWaifuMemory;
 import com.waifu.memory.utils.Constants;
 
-/**
- * Pantalla de selección de nivel
- * Muestra los 100+ niveles organizados por dificultad
- */
 public class LevelSelectScreen extends BaseScreen {
-    
-    // Fuentes
+
     private BitmapFont titleFont;
     private BitmapFont levelFont;
     private BitmapFont tabFont;
     private GlyphLayout layout;
-    
-    // Renderizado
+
     private ShapeRenderer shapeRenderer;
-    
-    // Tabs de dificultad
+
     private Rectangle tabEasy;
     private Rectangle tabNormal;
     private Rectangle tabHard;
-    private int selectedTab; // 0=Easy, 1=Normal, 2=Hard
-    
-    // Botones de niveles
+    private int selectedTab;
+
     private Rectangle[] levelButtons;
     private static final int LEVELS_PER_ROW = 5;
     private static final int VISIBLE_ROWS = 6;
-    
-    // Scroll
+
     private float scrollY;
     private float maxScrollY;
-    
-    // Botón atrás
+
     private Rectangle backButton;
-    
-    // Input
+
     private Vector3 touchPos;
-    
+
     public LevelSelectScreen(IQWaifuMemory game) {
         super(game);
-        
-        // Inicializar fuentes
+
         titleFont = new BitmapFont();
         titleFont.getData().setScale(3f);
         titleFont.setColor(Color.WHITE);
-        
+
         levelFont = new BitmapFont();
         levelFont.getData().setScale(2f);
         levelFont.setColor(Color.WHITE);
-        
+
         tabFont = new BitmapFont();
         tabFont.getData().setScale(2f);
         tabFont.setColor(Color.WHITE);
-        
+
         layout = new GlyphLayout();
         shapeRenderer = new ShapeRenderer();
         touchPos = new Vector3();
-        
+
         selectedTab = 0;
         scrollY = 0;
-        
+
         createUI();
         setupInput();
     }
-    
+
     private void createUI() {
         float padding = 40f;
-        
-        // Botón atrás
+
         backButton = new Rectangle(padding, Constants.WORLD_HEIGHT - 100, 80, 80);
-        
-        // Tabs de dificultad
+
         float tabWidth = (Constants.WORLD_WIDTH - padding * 4) / 3;
         float tabHeight = 80f;
         float tabY = Constants.WORLD_HEIGHT - 200;
-        
+
         tabEasy = new Rectangle(padding, tabY, tabWidth, tabHeight);
         tabNormal = new Rectangle(padding * 2 + tabWidth, tabY, tabWidth, tabHeight);
         tabHard = new Rectangle(padding * 3 + tabWidth * 2, tabY, tabWidth, tabHeight);
-        
-        // Crear botones de niveles
+
         createLevelButtons();
     }
-    
+
     private void createLevelButtons() {
         int totalLevels = getLevelsForTab(selectedTab);
         levelButtons = new Rectangle[totalLevels];
-        
+
         float startY = Constants.WORLD_HEIGHT - 320;
         float buttonSize = 150f;
         float spacing = 20f;
         float startX = (Constants.WORLD_WIDTH - (LEVELS_PER_ROW * buttonSize + (LEVELS_PER_ROW - 1) * spacing)) / 2;
-        
+
         for (int i = 0; i < totalLevels; i++) {
             int row = i / LEVELS_PER_ROW;
             int col = i % LEVELS_PER_ROW;
-            
+
             float x = startX + col * (buttonSize + spacing);
             float y = startY - row * (buttonSize + spacing);
-            
+
             levelButtons[i] = new Rectangle(x, y, buttonSize, buttonSize);
         }
-        
-        // Calcular scroll máximo
+
         int totalRows = (int) Math.ceil((float) totalLevels / LEVELS_PER_ROW);
         float contentHeight = totalRows * (150f + 20f);
         float visibleHeight = VISIBLE_ROWS * (150f + 20f);
         maxScrollY = Math.max(0, contentHeight - visibleHeight);
     }
-    
+
     private int getLevelsForTab(int tab) {
         switch (tab) {
-            case 0: return Constants.LEVELS_EASY_END - Constants.LEVELS_EASY_START + 1; // 33
-            case 1: return Constants.LEVELS_NORMAL_END - Constants.LEVELS_NORMAL_START + 1; // 33
-            case 2: return Constants.LEVELS_HARD_END - Constants.LEVELS_HARD_START + 1; // 34
+            case 0: return Constants.LEVELS_EASY_END - Constants.LEVELS_EASY_START + 1;
+            case 1: return Constants.LEVELS_NORMAL_END - Constants.LEVELS_NORMAL_START + 1;
+            case 2: return Constants.LEVELS_HARD_END - Constants.LEVELS_HARD_START + 1;
             default: return 33;
         }
     }
-    
+
     private int getLevelOffset(int tab) {
         switch (tab) {
-            case 0: return Constants.LEVELS_EASY_START - 1; // 0
-            case 1: return Constants.LEVELS_NORMAL_START - 1; // 33
-            case 2: return Constants.LEVELS_HARD_START - 1; // 66
+            case 0: return Constants.LEVELS_EASY_START - 1;
+            case 1: return Constants.LEVELS_NORMAL_START - 1;
+            case 2: return Constants.LEVELS_HARD_START - 1;
             default: return 0;
         }
     }
-    
+
     private void setupInput() {
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
                 touchPos.set(screenX, screenY, 0);
                 viewport.unproject(touchPos);
-                
-                // Botón atrás
+
                 if (backButton.contains(touchPos.x, touchPos.y)) {
                     audioManager.playButtonClick();
                     goToScreen(new HomeScreen(game));
                     return true;
                 }
-                
-                // Tabs
+
                 if (tabEasy.contains(touchPos.x, touchPos.y)) {
                     selectTab(0);
                     return true;
@@ -168,15 +150,13 @@ public class LevelSelectScreen extends BaseScreen {
                     }
                     return true;
                 }
-                
-                // Niveles
+
                 for (int i = 0; i < levelButtons.length; i++) {
                     Rectangle btn = levelButtons[i];
-                    // Ajustar por scroll
                     float adjustedY = btn.y + scrollY;
                     if (touchPos.x >= btn.x && touchPos.x <= btn.x + btn.width &&
                         touchPos.y >= adjustedY && touchPos.y <= adjustedY + btn.height) {
-                        
+
                         int levelNum = getLevelOffset(selectedTab) + i + 1;
                         if (isLevelUnlocked(levelNum)) {
                             startLevel(levelNum);
@@ -184,20 +164,19 @@ public class LevelSelectScreen extends BaseScreen {
                         return true;
                     }
                 }
-                
+
                 return false;
             }
-            
+
             @Override
             public boolean touchDragged(int screenX, int screenY, int pointer) {
-                // Scroll
                 float deltaY = Gdx.input.getDeltaY() * 2f;
                 scrollY = Math.max(0, Math.min(maxScrollY, scrollY + deltaY));
                 return true;
             }
         });
     }
-    
+
     private void selectTab(int tab) {
         if (tab != selectedTab) {
             audioManager.playButtonClick();
@@ -206,125 +185,94 @@ public class LevelSelectScreen extends BaseScreen {
             createLevelButtons();
         }
     }
-    
+
     private boolean isLevelUnlocked(int levelNum) {
         if (levelNum == 1) return true;
         return getPlayerData().maxLevelCompleted >= levelNum - 1;
     }
-    
+
     private void startLevel(int levelNum) {
         audioManager.playButtonClick();
-        Gdx.app.log(Constants.TAG, "Iniciando nivel: " + levelNum);
         goToScreen(new GameScreen(game, levelNum));
     }
-    
+
     @Override
     protected void update(float delta) {
-        // Actualización de lógica si es necesario
     }
-    
+
     @Override
     protected void draw() {
-        // Dibujar formas
         shapeRenderer.setProjectionMatrix(camera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        
-        // Botón atrás
+
         shapeRenderer.setColor(0.3f, 0.3f, 0.4f, 1f);
         shapeRenderer.rect(backButton.x, backButton.y, backButton.width, backButton.height);
-        
-        // Tabs
+
         drawTab(tabEasy, 0, true);
         drawTab(tabNormal, 1, getPlayerData().maxLevelCompleted >= Constants.LEVELS_EASY_END);
         drawTab(tabHard, 2, getPlayerData().maxLevelCompleted >= Constants.LEVELS_NORMAL_END);
-        
-        // Niveles
+
         for (int i = 0; i < levelButtons.length; i++) {
             Rectangle btn = levelButtons[i];
             int levelNum = getLevelOffset(selectedTab) + i + 1;
-            
             float adjustedY = btn.y + scrollY;
-            
-            // Solo dibujar si está visible
+
             if (adjustedY > -btn.height && adjustedY < Constants.WORLD_HEIGHT - 200) {
                 if (isLevelUnlocked(levelNum)) {
                     if (getPlayerData().maxLevelCompleted >= levelNum) {
-                        // Completado
                         shapeRenderer.setColor(0.2f, 0.7f, 0.3f, 1f);
                     } else {
-                        // Disponible
-                        shapeRenderer.setColor(Constants.COLOR_PRIMARY[0],
-                                               Constants.COLOR_PRIMARY[1],
-                                               Constants.COLOR_PRIMARY[2], 1f);
+                        shapeRenderer.setColor(Constants.COLOR_PRIMARY[0], Constants.COLOR_PRIMARY[1], Constants.COLOR_PRIMARY[2], 1f);
                     }
                 } else {
-                    // Bloqueado
                     shapeRenderer.setColor(0.3f, 0.3f, 0.3f, 1f);
                 }
-                
+
                 shapeRenderer.rect(btn.x, adjustedY, btn.width, btn.height);
             }
         }
-        
+
         shapeRenderer.end();
-        
-        // Dibujar texto
+
         batch.begin();
-        
-        // Título
+
         String title = "SELECCIONAR NIVEL";
         layout.setText(titleFont, title);
-        titleFont.draw(batch, title,
-            Constants.WORLD_WIDTH / 2 - layout.width / 2,
-            Constants.WORLD_HEIGHT - 40);
-        
-        // PCOINS
+        titleFont.draw(batch, title, Constants.WORLD_WIDTH / 2 - layout.width / 2, Constants.WORLD_HEIGHT - 40);
+
         String pcoins = Constants.CURRENCY_NAME + ": " + getPlayerData().pcoins;
         layout.setText(levelFont, pcoins);
-        levelFont.draw(batch, pcoins,
-            Constants.WORLD_WIDTH - layout.width - 40,
-            Constants.WORLD_HEIGHT - 60);
-        
-        // Botón atrás
+        levelFont.draw(batch, pcoins, Constants.WORLD_WIDTH - layout.width - 40, Constants.WORLD_HEIGHT - 60);
+
         layout.setText(levelFont, "<");
         levelFont.draw(batch, "<",
             backButton.x + (backButton.width - layout.width) / 2,
             backButton.y + (backButton.height + layout.height) / 2);
-        
-        // Texto de tabs
+
         drawTabText("FACIL", tabEasy);
         drawTabText("NORMAL", tabNormal);
         drawTabText("DIFICIL", tabHard);
-        
-        // Números de niveles
+
         for (int i = 0; i < levelButtons.length; i++) {
             Rectangle btn = levelButtons[i];
             int levelNum = getLevelOffset(selectedTab) + i + 1;
             float adjustedY = btn.y + scrollY;
-            
+
             if (adjustedY > -btn.height && adjustedY < Constants.WORLD_HEIGHT - 200) {
-                String levelText;
-                if (isLevelUnlocked(levelNum)) {
-                    levelText = String.valueOf(levelNum);
-                } else {
-                    levelText = "🔒";
-                }
-                
+                String levelText = isLevelUnlocked(levelNum) ? String.valueOf(levelNum) : "LOCK";
                 layout.setText(levelFont, levelText);
                 levelFont.draw(batch, levelText,
                     btn.x + (btn.width - layout.width) / 2,
                     adjustedY + (btn.height + layout.height) / 2);
             }
         }
-        
+
         batch.end();
     }
-    
+
     private void drawTab(Rectangle tab, int tabIndex, boolean unlocked) {
         if (selectedTab == tabIndex) {
-            shapeRenderer.setColor(Constants.COLOR_PRIMARY[0],
-                                   Constants.COLOR_PRIMARY[1],
-                                   Constants.COLOR_PRIMARY[2], 1f);
+            shapeRenderer.setColor(Constants.COLOR_PRIMARY[0], Constants.COLOR_PRIMARY[1], Constants.COLOR_PRIMARY[2], 1f);
         } else if (unlocked) {
             shapeRenderer.setColor(0.4f, 0.4f, 0.5f, 1f);
         } else {
@@ -332,14 +280,12 @@ public class LevelSelectScreen extends BaseScreen {
         }
         shapeRenderer.rect(tab.x, tab.y, tab.width, tab.height);
     }
-    
+
     private void drawTabText(String text, Rectangle tab) {
         layout.setText(tabFont, text);
-        tabFont.draw(batch, text,
-            tab.x + (tab.width - layout.width) / 2,
-            tab.y + (tab.height + layout.height) / 2);
+        tabFont.draw(batch, text, tab.x + (tab.width - layout.width) / 2, tab.y + (tab.height + layout.height) / 2);
     }
-    
+
     @Override
     public void dispose() {
         titleFont.dispose();
