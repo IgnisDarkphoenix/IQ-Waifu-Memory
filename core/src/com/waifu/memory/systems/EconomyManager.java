@@ -10,12 +10,10 @@ public final class EconomyManager {
     public static class RewardBreakdown {
         public int pairsFound;
         public int pairValue;
-
         public int pairsReward;
         public int timeBonus;
         public float multiplier;
         public int multiplierBonus;
-
         public int total;
 
         public int totalWithRewardedDouble() {
