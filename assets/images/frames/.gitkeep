@@ -1,0 +1,10 @@
+# Marcos decorativos por rareza
+#
+# Archivos esperados:
+# - frame_base.png  (Marco gris - Base)
+# - frame_star1.png (Marco bronce - ★)
+# - frame_star2.png (Marco plata - ★★)
+# - frame_star3.png (Marco dorado - ★★★)
+#
+# Dimensiones: 512×512 px
+# Formato: PNG con centro transparente
