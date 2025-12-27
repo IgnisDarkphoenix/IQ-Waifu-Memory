@@ -1,58 +1,59 @@
 {
   "schemaVersion": 1,
   "levels": [
-    {"level": 15, "poolCount": 10},
-    {"level": 20, "poolCount": 12},
-    {"level": 25, "poolCount": 14},
-    {"level": 30, "poolCount": 16},
-    {"level": 33, "poolCount": 18},
-    
-    {"level": 34, "poolCount": 18},
-    {"level": 38, "poolCount": 20},
-    
-    {"level": 41, "shuffle": true, "shuffleInterval": 8},
-    {"level": 44, "shuffle": true, "shuffleInterval": 7},
-    {"level": 47, "shuffle": true, "shuffleInterval": 6},
-    {"level": 50, "shuffle": true, "shuffleInterval": 5},
-    
-    {"level": 51, "shuffle": true, "shuffleInterval": 5},
-    {"level": 53, "shuffle": true, "shuffleInterval": 4},
-    {"level": 55, "shuffle": true, "shuffleInterval": 4},
-    
-    {"level": 56, "shuffle": false, "fade": true},
-    {"level": 58, "shuffle": false, "fade": true},
-    {"level": 60, "shuffle": false, "fade": true},
-    
-    {"level": 61, "shuffle": true, "shuffleInterval": 5, "fade": true},
-    {"level": 63, "shuffle": true, "shuffleInterval": 4, "fade": true},
-    {"level": 65, "shuffle": true, "shuffleInterval": 4, "fade": true},
-    {"level": 66, "shuffle": true, "shuffleInterval": 3, "fade": true, "poolCount": 25},
-    
-    {"level": 67, "shuffle": false, "fade": false},
-    {"level": 70, "shuffle": true, "shuffleInterval": 6},
-    {"level": 73, "shuffle": true, "shuffleInterval": 5},
-    {"level": 75, "shuffle": true, "shuffleInterval": 4, "fade": true},
-    
-    {"level": 76, "shuffle": true, "shuffleInterval": 4, "fade": true},
-    {"level": 78, "shuffle": true, "shuffleInterval": 3, "fade": true},
-    {"level": 80, "shuffle": true, "shuffleInterval": 3, "fade": true},
-    
-    {"level": 81, "shuffle": false, "fade": false, "multiGrid": true, "multiGridCount": 2},
-    {"level": 83, "shuffle": true, "shuffleInterval": 5, "multiGrid": true, "multiGridCount": 2},
-    {"level": 85, "shuffle": true, "shuffleInterval": 4, "multiGrid": true, "multiGridCount": 2},
-    
-    {"level": 86, "shuffle": false, "fade": true, "multiGrid": true, "multiGridCount": 2},
-    {"level": 88, "shuffle": true, "shuffleInterval": 4, "fade": true, "multiGrid": true, "multiGridCount": 2},
-    {"level": 90, "shuffle": true, "shuffleInterval": 3, "fade": true, "multiGrid": true, "multiGridCount": 2},
-    
-    {"level": 91, "shuffle": true, "shuffleInterval": 4, "fade": true, "multiGrid": true, "multiGridCount": 2},
-    {"level": 93, "shuffle": true, "shuffleInterval": 3, "fade": true, "multiGrid": true, "multiGridCount": 2},
-    {"level": 95, "shuffle": true, "shuffleInterval": 3, "fade": true, "multiGrid": true, "multiGridCount": 2, "poolCount": 40},
-    
-    {"level": 96, "shuffle": true, "shuffleInterval": 3, "fade": true, "multiGrid": true, "multiGridCount": 3},
-    {"level": 97, "shuffle": true, "shuffleInterval": 3, "fade": true, "multiGrid": true, "multiGridCount": 3},
-    {"level": 98, "shuffle": true, "shuffleInterval": 2, "fade": true, "multiGrid": true, "multiGridCount": 3},
-    {"level": 99, "shuffle": true, "shuffleInterval": 2, "fade": true, "multiGrid": true, "multiGridCount": 3, "poolCount": 45},
-    {"level": 100, "shuffle": true, "shuffleInterval": 2, "fade": true, "multiGrid": true, "multiGridCount": 3, "poolCount": 50}
+    { "level": 15, "poolCount": 10 },
+    { "level": 20, "poolCount": 12 },
+    { "level": 25, "poolCount": 14 },
+    { "level": 30, "poolCount": 16 },
+    { "level": 33, "poolCount": 18 },
+
+    { "level": 34, "poolCount": 18 },
+    { "level": 38, "poolCount": 20 },
+
+    { "level": 41, "shuffle": true, "shuffleInterval": 8 },
+    { "level": 44, "shuffle": true, "shuffleInterval": 7 },
+    { "level": 47, "shuffle": true, "shuffleInterval": 6 },
+    { "level": 50, "shuffle": true, "shuffleInterval": 5 },
+
+    { "level": 51, "shuffle": true, "shuffleInterval": 5 },
+    { "level": 53, "shuffle": true, "shuffleInterval": 4 },
+    { "level": 55, "shuffle": true, "shuffleInterval": 4 },
+
+    { "level": 56, "shuffle": false, "fade": true },
+    { "level": 58, "shuffle": false, "fade": true },
+    { "level": 60, "shuffle": false, "fade": true },
+
+    { "level": 61, "shuffle": true, "shuffleInterval": 5, "fade": true },
+    { "level": 63, "shuffle": true, "shuffleInterval": 4, "fade": true },
+    { "level": 65, "shuffle": true, "shuffleInterval": 4, "fade": true },
+    { "level": 66, "shuffle": true, "shuffleInterval": 3, "fade": true, "poolCount": 25 },
+
+    { "level": 67, "shuffle": false, "fade": false },
+
+    { "level": 70, "shuffle": true, "shuffleInterval": 6 },
+    { "level": 73, "shuffle": true, "shuffleInterval": 5 },
+    { "level": 75, "shuffle": true, "shuffleInterval": 4, "fade": true },
+
+    { "level": 76, "shuffle": true, "shuffleInterval": 4, "fade": true },
+    { "level": 78, "shuffle": true, "shuffleInterval": 3, "fade": true },
+    { "level": 80, "shuffle": true, "shuffleInterval": 3, "fade": true },
+
+    { "level": 81, "shuffle": false, "fade": false, "multiGrid": true, "multiGridCount": 2 },
+    { "level": 83, "shuffle": true, "shuffleInterval": 5, "multiGrid": true, "multiGridCount": 2 },
+    { "level": 85, "shuffle": true, "shuffleInterval": 4, "multiGrid": true, "multiGridCount": 2 },
+
+    { "level": 86, "shuffle": false, "fade": true, "multiGrid": true, "multiGridCount": 2 },
+    { "level": 88, "shuffle": true, "shuffleInterval": 4, "fade": true, "multiGrid": true, "multiGridCount": 2 },
+    { "level": 90, "shuffle": true, "shuffleInterval": 3, "fade": true, "multiGrid": true, "multiGridCount": 2 },
+
+    { "level": 91, "shuffle": true, "shuffleInterval": 4, "fade": true, "multiGrid": true, "multiGridCount": 2 },
+    { "level": 93, "shuffle": true, "shuffleInterval": 3, "fade": true, "multiGrid": true, "multiGridCount": 2 },
+    { "level": 95, "shuffle": true, "shuffleInterval": 3, "fade": true, "multiGrid": true, "multiGridCount": 2, "poolCount": 40 },
+
+    { "level": 96, "shuffle": true, "shuffleInterval": 3, "fade": true, "multiGrid": true, "multiGridCount": 3 },
+    { "level": 97, "shuffle": true, "shuffleInterval": 3, "fade": true, "multiGrid": true, "multiGridCount": 3 },
+    { "level": 98, "shuffle": true, "shuffleInterval": 2, "fade": true, "multiGrid": true, "multiGridCount": 3 },
+    { "level": 99, "shuffle": true, "shuffleInterval": 2, "fade": true, "multiGrid": true, "multiGridCount": 3, "poolCount": 45 },
+    { "level": 100, "shuffle": true, "shuffleInterval": 2, "fade": true, "multiGrid": true, "multiGridCount": 3, "poolCount": 50 }
   ]
 }
