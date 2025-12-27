@@ -25,15 +25,11 @@ public class LevelConfig {
         gridSize = Constants.GRID_EASY;
         timeBonusSeconds = 0;
         rewardMultiplier = 1.0f;
-
         shuffle = false;
         shuffleInterval = Constants.SHUFFLE_INTERVAL;
-
         multiGrid = false;
         multiGridCount = 1;
-
         fade = false;
-
         poolCount = 8;
     }
 
