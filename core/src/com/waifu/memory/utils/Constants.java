@@ -47,12 +47,7 @@ public final class Constants {
     public static final int GALLERY_COST_STAR2 = 750;
     public static final int GALLERY_COST_STAR3 = 1000;
 
-    public static final int[] GALLERY_COSTS = {
-        GALLERY_COST_BASE,
-        GALLERY_COST_STAR1,
-        GALLERY_COST_STAR2,
-        GALLERY_COST_STAR3
-    };
+    public static final int[] GALLERY_COSTS = {GALLERY_COST_BASE, GALLERY_COST_STAR1, GALLERY_COST_STAR2, GALLERY_COST_STAR3};
 
     public static final int TOTAL_LEVELS = 100;
     public static final int LEVELS_EASY_START = 1;
