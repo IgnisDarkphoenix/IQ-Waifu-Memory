@@ -52,7 +52,7 @@ public class GameGrid {
         float availableHeight = Constants.WORLD_HEIGHT - VERTICAL_PADDING;
 
         float padding = Constants.CARD_PADDING;
-        float ratio = Constants.CARD_ASPECT_RATIO; // width/height
+        float ratio = Constants.CARD_ASPECT_RATIO;
 
         float maxW = (availableWidth - (gridSize - 1) * padding) / gridSize;
         float maxH = maxW / ratio;
@@ -201,12 +201,12 @@ public class GameGrid {
         return totalCards / 2;
     }
 
-    public Card[] getCards() {
-        return cards;
-    }
-
     public int getGridSize() {
         return gridSize;
+    }
+
+    public Card[] getCards() {
+        return cards;
     }
 
     public boolean triggerHintShake() {
