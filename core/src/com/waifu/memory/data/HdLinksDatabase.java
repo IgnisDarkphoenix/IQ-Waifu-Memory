@@ -11,7 +11,7 @@ public class HdLinksDatabase {
     private boolean loaded = false;
     private final IntMap<String> links = new IntMap<>();
 
-    public void loadIfNeeded() {
+    private void loadIfNeeded() {
         if (loaded) return;
         loaded = true;
 
@@ -26,17 +26,19 @@ public class HdLinksDatabase {
             JsonValue root = new JsonReader().parse(text);
 
             JsonValue linksNode = root.get("links");
-            if (linksNode != null) {
-                for (JsonValue child = linksNode.child; child != null; child = child.next) {
-                    String key = child.name;
-                    String url = child.asString();
-                    try {
-                        int id = Integer.parseInt(key);
-                        if (Constants.isValidCharacterId(id) && url != null && !url.isEmpty()) {
-                            links.put(id, url);
-                        }
-                    } catch (Exception ignored) {
+            if (linksNode == null) return;
+
+            for (JsonValue child = linksNode.child; child != null; child = child.next) {
+                String key = child.name;
+                String url = child.asString();
+                if (url == null || url.isEmpty()) continue;
+
+                try {
+                    int id = Integer.parseInt(key);
+                    if (Constants.isValidCharacterId(id)) {
+                        links.put(id, url);
                     }
+                } catch (Exception ignored) {
                 }
             }
 
