@@ -1,0 +1,16 @@
+# Imágenes de personajes (waifus)
+# 
+# Formato: char_XX_V.png
+# - XX = ID del personaje (00-49)
+# - V = Variante (0=Base, 1=★, 2=★★, 3=★★★)
+#
+# Ejemplos:
+# - char_00_0.png (Personaje 0, Base)
+# - char_00_1.png (Personaje 0, ★)
+# - char_00_2.png (Personaje 0, ★★)
+# - char_00_3.png (Personaje 0, ★★★)
+# - char_49_3.png (Personaje 49, ★★★)
+#
+# Total: 50 personajes × 4 variantes = 200 imágenes
+# Dimensiones: 512×512 px
+# Formato: PNG con transparencia
