@@ -36,8 +36,11 @@ public final class Constants {
     public static final int TIME_BONUS_6X6 = 15;
     public static final int TIME_BONUS_8X8 = 30;
 
+    public static final int AD_EXTRA_TIME = 15;
+
     public static final int TOTAL_CHARACTERS = 50;
     public static final int VARIANTS_PER_CHARACTER = 4;
+    public static final int ARTS_PER_CHARACTER = VARIANTS_PER_CHARACTER;
 
     public static final int GALLERY_COST_BASE = 250;
     public static final int GALLERY_COST_STAR1 = 500;
@@ -142,9 +145,6 @@ public final class Constants {
     public static final float[] COLOR_RARITY_STAR2 = {0.75f, 0.75f, 0.8f, 1f};
     public static final float[] COLOR_RARITY_STAR3 = {1f, 0.84f, 0f, 1f};
 
-    public static final int REWARDED_EXTRA_TIME_SECONDS = 15;
-    public static final int AD_EXTRA_TIME = REWARDED_EXTRA_TIME_SECONDS;
-
     public static final int INTERSTITIAL_FREQUENCY = 3;
     public static final int INTERSTITIAL_NEW_PLAYER_GRACE_GAMES = 9;
     public static final boolean INTERSTITIAL_ON_EXIT_ENABLED = true;
@@ -160,6 +160,7 @@ public final class Constants {
     public static final String AD_PLACEMENT_REWARDED_HINT = "REWARDED_HINT";
     public static final String AD_PLACEMENT_REWARDED_HD_DOWNLOAD = "REWARDED_HD_DOWNLOAD";
     public static final String AD_PLACEMENT_INTERSTITIAL = "INTERSTITIAL";
+    public static final String AD_PLACEMENT_INTERSTITIAL_EXIT = "INTERSTITIAL_EXIT";
 
     public static final String LEVELS_JSON = "levels.json";
     public static final String LEVELS_JSON_PATH = PATH_DATA + LEVELS_JSON;
@@ -189,6 +190,18 @@ public final class Constants {
 
     public static String getFramePath(int variant) {
         return PATH_FRAMES + getFrameFileName(variant);
+    }
+
+    public static String getUiPath(String fileName) {
+        return PATH_UI + fileName;
+    }
+
+    public static String getSfxPath(String fileName) {
+        return PATH_SFX + fileName;
+    }
+
+    public static String getMusicPath(String fileName) {
+        return PATH_MUSIC + fileName;
     }
 
     public static int getGalleryCost(int variant) {
@@ -230,5 +243,13 @@ public final class Constants {
 
     public static boolean isHintsEnabledForGrid(int gridSize) {
         return gridSize >= HINT_MIN_GRID_SIZE;
+    }
+
+    public static boolean isHintShakeConfigValid() {
+        return HINT_SHAKE_TOTAL_CARDS == (HINT_SHAKE_PAIR_CARDS + HINT_SHAKE_DECOY_CARDS);
+    }
+
+    public static boolean isInterstitialEligible(int totalGamesPlayed) {
+        return totalGamesPlayed >= INTERSTITIAL_NEW_PLAYER_GRACE_GAMES;
     }
 }
