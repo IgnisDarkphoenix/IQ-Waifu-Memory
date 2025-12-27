@@ -17,6 +17,7 @@ public class GameGrid {
     private final Card[] cards;
 
     private final GameScreen gameScreen;
+    private final int[] characterPool;
 
     private float gridX, gridY;
     private float cardW, cardH;
@@ -33,11 +34,12 @@ public class GameGrid {
     private static final float HINT_SHAKE_DURATION = 0.7f;
     private static final float HINT_SHAKE_AMPLITUDE = 8f;
 
-    public GameGrid(int size, GameScreen gameScreen) {
+    public GameGrid(int size, GameScreen gameScreen, int[] characterPool) {
         this.gridSize = size;
         this.gameScreen = gameScreen;
         this.totalCards = size * size;
         this.cards = new Card[totalCards];
+        this.characterPool = (characterPool != null && characterPool.length > 0) ? characterPool : null;
 
         calculateLayout();
 
@@ -45,6 +47,10 @@ public class GameGrid {
         this.baseFrameTexture = gameScreen.getAssetManager().getFrameTexture(0);
 
         createCards();
+    }
+
+    public GameGrid(int size, GameScreen gameScreen) {
+        this(size, gameScreen, null);
     }
 
     private void calculateLayout() {
@@ -77,17 +83,22 @@ public class GameGrid {
     private void createCards() {
         int numPairs = totalCards / 2;
 
-        int[] characterIds = new int[totalCards];
+        int[] ids = new int[totalCards];
         for (int i = 0; i < numPairs; i++) {
-            int charId = i % Constants.TOTAL_CHARACTERS;
-            characterIds[i * 2] = charId;
-            characterIds[i * 2 + 1] = charId;
+            int charId;
+            if (characterPool != null) {
+                charId = characterPool[i % characterPool.length];
+            } else {
+                charId = i % Constants.TOTAL_CHARACTERS;
+            }
+            ids[i * 2] = charId;
+            ids[i * 2 + 1] = charId;
         }
 
-        shuffleArray(characterIds);
+        shuffleArray(ids);
 
         for (int i = 0; i < totalCards; i++) {
-            int charId = characterIds[i];
+            int charId = ids[i];
 
             Texture frontTexture = gameScreen.getAssetManager().getCharacterTexture(charId, 0);
 
@@ -203,10 +214,6 @@ public class GameGrid {
 
     public int getGridSize() {
         return gridSize;
-    }
-
-    public Card[] getCards() {
-        return cards;
     }
 
     public boolean triggerHintShake() {
