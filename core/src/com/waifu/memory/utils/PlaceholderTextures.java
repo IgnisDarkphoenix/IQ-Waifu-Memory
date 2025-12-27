@@ -10,14 +10,7 @@ public class PlaceholderTextures implements Disposable {
     private Texture character;
     private Texture cardBack;
     private Texture[] frames;
-
     private boolean initialized = false;
-
-    public void init(int size, int variants) {
-        int width = size;
-        int height = (Constants.ASSET_SIZE_CHARACTERS_H > 0) ? Constants.ASSET_SIZE_CHARACTERS_H : size;
-        init(width, height, variants);
-    }
 
     public void init(int width, int height, int variants) {
         if (initialized) return;
