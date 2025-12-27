@@ -1,416 +1,317 @@
-package com.waifu.memory.managers;
+package com.waifu.memory.data;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.utils.Disposable;
-import com.badlogic.gdx.utils.ObjectMap;
 import com.waifu.memory.utils.Constants;
+import java.util.HashMap;
+import java.util.Map;
 
-/**
- * Manager para cargar y gestionar assets gráficos
- * Implementa lazy loading y fallbacks visuales
- */
-public class AssetManager implements Disposable {
-    
-    // Cache de texturas de personajes (lazy loading)
-    private ObjectMap<String, Texture> characterTextures;
-    
-    // Texturas esenciales (siempre cargadas)
-    private Texture cardBackTexture;
-    private Texture logoTexture;
-    
-    // Marcos por rareza
-    private Texture[] frameTextures;
-    
-    // Texturas placeholder (generadas dinámicamente)
-    private Texture placeholderCharacter;
-    private Texture placeholderCardBack;
-    private Texture[] placeholderFrames;
-    
-    // Estado
-    private boolean essentialsLoaded;
-    
-    public AssetManager() {
-        characterTextures = new ObjectMap<>();
-        frameTextures = new Texture[Constants.VARIANTS_PER_CHARACTER];
-        placeholderFrames = new Texture[Constants.VARIANTS_PER_CHARACTER];
-        essentialsLoaded = false;
+public class PlayerData {
+
+    public int pcoins;
+    public int totalPcoinsEarned;
+
+    public int currentLevel;
+    public int maxLevelCompleted;
+
+    public int pairValueLevel;
+    public int timeBonusLevel;
+
+    public Map<String, Boolean> galleryUnlocks;
+
+    public float musicVolume;
+    public float sfxVolume;
+    public String language;
+
+    public int totalGamesPlayed;
+    public int totalPairsFound;
+    public int totalVictories;
+    public int totalDefeats;
+    public int currentWinStreak;
+    public int bestWinStreak;
+
+    public long lastDailyRewardTime;
+    public int dailyRewardStreak;
+
+    public boolean tutorialCompleted;
+
+    public int gamesPlayedSinceLastAd;
+
+    public int totalRewardedAdsWatched;
+    public int totalInterstitialsShown;
+    public int totalHintsUsed;
+    public int totalHdDownloads;
+
+    public PlayerData() {
+        pcoins = Constants.INITIAL_PCOINS;
+        totalPcoinsEarned = 0;
+
+        currentLevel = 1;
+        maxLevelCompleted = 0;
+
+        pairValueLevel = 0;
+        timeBonusLevel = 0;
+
+        galleryUnlocks = new HashMap<>();
+
+        musicVolume = Constants.DEFAULT_MUSIC_VOLUME;
+        sfxVolume = Constants.DEFAULT_SFX_VOLUME;
+        language = "es";
+
+        totalGamesPlayed = 0;
+        totalPairsFound = 0;
+        totalVictories = 0;
+        totalDefeats = 0;
+        currentWinStreak = 0;
+        bestWinStreak = 0;
+
+        lastDailyRewardTime = 0;
+        dailyRewardStreak = 0;
+
+        tutorialCompleted = false;
+
+        gamesPlayedSinceLastAd = 0;
+
+        totalRewardedAdsWatched = 0;
+        totalInterstitialsShown = 0;
+        totalHintsUsed = 0;
+        totalHdDownloads = 0;
     }
-    
-    /**
-     * Carga los assets esenciales
-     * Llamar en SplashScreen
-     */
-    public void loadEssentialAssets() {
-        Gdx.app.log(Constants.TAG, "Cargando assets esenciales...");
-        
-        // Generar placeholders primero (siempre disponibles)
-        generatePlaceholders();
-        
-        // Intentar cargar assets reales
-        loadRealAssets();
-        
-        essentialsLoaded = true;
-        Gdx.app.log(Constants.TAG, "Assets esenciales listos");
+
+    private int clamp(int v, int min, int max) {
+        return Math.max(min, Math.min(max, v));
     }
-    
-    /**
-     * Genera texturas placeholder para cuando no existan los assets reales
-     */
-    private void generatePlaceholders() {
-        int size = Constants.ASSET_SIZE_CHARACTERS;
-        
-        // Placeholder para personajes (gris con patrón)
-        placeholderCharacter = createPlaceholderTexture(size, 
-            new Color(0.3f, 0.3f, 0.4f, 1f), "?");
-        
-        // Placeholder para card back (azul oscuro)
-        placeholderCardBack = createPlaceholderTexture(size,
-            new Color(0.15f, 0.15f, 0.3f, 1f), "CARD");
-        
-        // Placeholders para marcos (colores por rareza)
-        Color[] frameColors = {
-            new Color(0.4f, 0.4f, 0.45f, 1f),  // Base - Gris
-            new Color(0.7f, 0.45f, 0.2f, 1f),  // ☆ - Bronce
-            new Color(0.7f, 0.7f, 0.75f, 1f),  // ☆☆ - Plata
-            new Color(0.9f, 0.75f, 0.1f, 1f)   // ☆☆☆ - Oro
-        };
-        
-        for (int i = 0; i < Constants.VARIANTS_PER_CHARACTER; i++) {
-            placeholderFrames[i] = createFramePlaceholder(size, frameColors[i], i);
-        }
-        
-        Gdx.app.log(Constants.TAG, "Placeholders generados");
+
+    public int getCurrentPairValue() {
+        int idx = clamp(pairValueLevel, 0, Constants.PAIR_VALUES.length - 1);
+        return Constants.PAIR_VALUES[idx];
     }
-    
-    /**
-     * Crea una textura placeholder simple
-     */
-    private Texture createPlaceholderTexture(int size, Color color, String label) {
-        Pixmap pixmap = new Pixmap(size, size, Pixmap.Format.RGBA8888);
-        
-        // Fondo
-        pixmap.setColor(color);
-        pixmap.fill();
-        
-        // Borde
-        pixmap.setColor(Color.WHITE);
-        pixmap.drawRectangle(0, 0, size, size);
-        pixmap.drawRectangle(1, 1, size - 2, size - 2);
-        
-        // Patrón diagonal
-        pixmap.setColor(new Color(1f, 1f, 1f, 0.1f));
-        for (int i = 0; i < size * 2; i += 20) {
-            pixmap.drawLine(i, 0, 0, i);
-        }
-        
-        Texture texture = new Texture(pixmap);
-        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-        pixmap.dispose();
-        
-        return texture;
+
+    public boolean canUpgradePairValue() {
+        if (pairValueLevel >= Constants.MAX_PAIR_LEVEL) return false;
+        int next = pairValueLevel + 1;
+        if (next < 0 || next >= Constants.PAIR_UPGRADE_COSTS.length) return false;
+        return pcoins >= Constants.PAIR_UPGRADE_COSTS[next];
     }
-    
-    /**
-     * Crea un placeholder de marco con borde decorativo
-     */
-    private Texture createFramePlaceholder(int size, Color color, int variant) {
-        Pixmap pixmap = new Pixmap(size, size, Pixmap.Format.RGBA8888);
-        
-        // Transparente en el centro
-        pixmap.setColor(Color.CLEAR);
-        pixmap.fill();
-        
-        int borderWidth = 20;
-        
-        // Borde exterior
-        pixmap.setColor(color);
-        
-        // Top
-        pixmap.fillRectangle(0, 0, size, borderWidth);
-        // Bottom
-        pixmap.fillRectangle(0, size - borderWidth, size, borderWidth);
-        // Left
-        pixmap.fillRectangle(0, 0, borderWidth, size);
-        // Right
-        pixmap.fillRectangle(size - borderWidth, 0, borderWidth, size);
-        
-        // Esquinas decorativas
-        pixmap.setColor(Color.WHITE);
-        int cornerSize = 30;
-        // Top-left
-        pixmap.fillRectangle(0, 0, cornerSize, 5);
-        pixmap.fillRectangle(0, 0, 5, cornerSize);
-        // Top-right
-        pixmap.fillRectangle(size - cornerSize, 0, cornerSize, 5);
-        pixmap.fillRectangle(size - 5, 0, 5, cornerSize);
-        // Bottom-left
-        pixmap.fillRectangle(0, size - 5, cornerSize, 5);
-        pixmap.fillRectangle(0, size - cornerSize, 5, cornerSize);
-        // Bottom-right
-        pixmap.fillRectangle(size - cornerSize, size - 5, cornerSize, 5);
-        pixmap.fillRectangle(size - 5, size - cornerSize, 5, cornerSize);
-        
-        // Indicador de estrellas en la parte inferior
-        if (variant > 0) {
-            int starY = size - borderWidth + 5;
-            int starSize = 10;
-            int totalWidth = variant * (starSize + 5);
-            int startX = (size - totalWidth) / 2;
-            
-            pixmap.setColor(Color.WHITE);
-            for (int s = 0; s < variant; s++) {
-                int x = startX + s * (starSize + 5);
-                pixmap.fillRectangle(x, starY, starSize, starSize);
-            }
-        }
-        
-        Texture texture = new Texture(pixmap);
-        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-        pixmap.dispose();
-        
-        return texture;
+
+    public int getNextPairUpgradeCost() {
+        if (pairValueLevel >= Constants.MAX_PAIR_LEVEL) return -1;
+        int next = pairValueLevel + 1;
+        if (next < 0 || next >= Constants.PAIR_UPGRADE_COSTS.length) return -1;
+        return Constants.PAIR_UPGRADE_COSTS[next];
     }
-    
-    /**
-     * Intenta cargar los assets reales desde archivos
-     */
-    private void loadRealAssets() {
-        // Card back
-        String cardBackPath = Constants.PATH_UI + Constants.UI_CARD_BACK;
-        if (fileExists(cardBackPath)) {
-            cardBackTexture = loadTexture(cardBackPath);
-            Gdx.app.log(Constants.TAG, "Card back cargado");
-        } else {
-            Gdx.app.log(Constants.TAG, "Card back no encontrado, usando placeholder");
-        }
-        
-        // Logo
-        String logoPath = Constants.PATH_UI + Constants.UI_LOGO;
-        if (fileExists(logoPath)) {
-            logoTexture = loadTexture(logoPath);
-            Gdx.app.log(Constants.TAG, "Logo cargado");
-        }
-        
-        // Marcos
-        for (int i = 0; i < Constants.VARIANTS_PER_CHARACTER; i++) {
-            String framePath = Constants.getFramePath(i);
-            if (fileExists(framePath)) {
-                frameTextures[i] = loadTexture(framePath);
-                Gdx.app.log(Constants.TAG, "Marco " + i + " cargado");
-            }
-        }
+
+    public boolean upgradePairValue() {
+        if (!canUpgradePairValue()) return false;
+        pcoins -= Constants.PAIR_UPGRADE_COSTS[pairValueLevel + 1];
+        pairValueLevel++;
+        return true;
     }
-    
-    /**
-     * Carga una textura desde archivo
-     */
-    private Texture loadTexture(String path) {
-        try {
-            Texture texture = new Texture(Gdx.files.internal(path));
-            texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-            return texture;
-        } catch (Exception e) {
-            Gdx.app.error(Constants.TAG, "Error cargando: " + path + " - " + e.getMessage());
-            return null;
-        }
+
+    public int getCurrentBaseTime() {
+        int idx = clamp(timeBonusLevel, 0, Constants.TIME_VALUES.length - 1);
+        return Constants.TIME_VALUES[idx];
     }
-    
-    /**
-     * Verifica si un archivo existe
-     */
-    private boolean fileExists(String path) {
-        return Gdx.files.internal(path).exists();
+
+    public boolean canUpgradeTime() {
+        if (timeBonusLevel >= Constants.MAX_TIME_LEVEL) return false;
+        int next = timeBonusLevel + 1;
+        if (next < 0 || next >= Constants.TIME_UPGRADE_COSTS.length) return false;
+        return pcoins >= Constants.TIME_UPGRADE_COSTS[next];
     }
-    
-    // ══════════════════════════════════════════════════════════
-    // GETTERS CON FALLBACK
-    // ══════════════════════════════════════════════════════════
-    
-    /**
-     * Obtiene la textura del reverso de carta (nunca null)
-     */
-    public Texture getCardBackTexture() {
-        return cardBackTexture != null ? cardBackTexture : placeholderCardBack;
+
+    public int getNextTimeUpgradeCost() {
+        if (timeBonusLevel >= Constants.MAX_TIME_LEVEL) return -1;
+        int next = timeBonusLevel + 1;
+        if (next < 0 || next >= Constants.TIME_UPGRADE_COSTS.length) return -1;
+        return Constants.TIME_UPGRADE_COSTS[next];
     }
-    
-    /**
-     * Obtiene la textura del logo (puede ser null)
-     */
-    public Texture getLogoTexture() {
-        return logoTexture;
+
+    public boolean upgradeTime() {
+        if (!canUpgradeTime()) return false;
+        pcoins -= Constants.TIME_UPGRADE_COSTS[timeBonusLevel + 1];
+        timeBonusLevel++;
+        return true;
     }
-    
-    /**
-     * Obtiene el marco para una variante (nunca null)
-     */
-    public Texture getFrameTexture(int variant) {
-        if (variant < 0 || variant >= Constants.VARIANTS_PER_CHARACTER) {
-            variant = 0;
-        }
-        
-        Texture real = frameTextures[variant];
-        return real != null ? real : placeholderFrames[variant];
+
+    public void addPcoins(int amount) {
+        if (amount <= 0) return;
+        pcoins += amount;
+        totalPcoinsEarned += amount;
     }
-    
-    /**
-     * Verifica si existe el marco real (no placeholder)
-     */
-    public boolean hasRealFrame(int variant) {
-        if (variant < 0 || variant >= Constants.VARIANTS_PER_CHARACTER) {
-            return false;
-        }
-        return frameTextures[variant] != null;
+
+    public boolean spendPcoins(int amount) {
+        if (amount <= 0) return false;
+        if (pcoins < amount) return false;
+        pcoins -= amount;
+        return true;
     }
-    
-    // ══════════════════════════════════════════════════════════
-    // PERSONAJES - LAZY LOADING
-    // ══════════════════════════════════════════════════════════
-    
-    /**
-     * Obtiene textura de personaje con lazy loading (nunca null)
-     */
-    public Texture getCharacterTexture(int characterId, int variant) {
-        // Validar
-        if (characterId < 0 || characterId >= Constants.TOTAL_CHARACTERS ||
-            variant < 0 || variant >= Constants.VARIANTS_PER_CHARACTER) {
-            return placeholderCharacter;
-        }
-        
-        String key = characterId + "_" + variant;
-        
-        // Verificar cache
-        if (characterTextures.containsKey(key)) {
-            Texture cached = characterTextures.get(key);
-            return cached != null ? cached : placeholderCharacter;
-        }
-        
-        // Intentar cargar
-        String path = Constants.getCharacterPath(characterId, variant);
-        
-        if (fileExists(path)) {
-            Texture texture = loadTexture(path);
-            characterTextures.put(key, texture);
-            
-            if (texture != null) {
-                Gdx.app.log(Constants.TAG, "Personaje cargado: " + key);
-                return texture;
-            }
-        }
-        
-        // Marcar como intentado (null en cache = no existe)
-        characterTextures.put(key, null);
-        return placeholderCharacter;
+
+    private String getUnlockKey(int characterId, int variant) {
+        return characterId + "_" + variant;
     }
-    
-    /**
-     * Verifica si existe la textura real de un personaje
-     */
-    public boolean hasRealCharacterTexture(int characterId, int variant) {
-        String path = Constants.getCharacterPath(characterId, variant);
-        return fileExists(path);
+
+    public boolean isVariantUnlocked(int characterId, int variant) {
+        if (galleryUnlocks == null) galleryUnlocks = new HashMap<>();
+        String key = getUnlockKey(characterId, variant);
+        return galleryUnlocks.getOrDefault(key, false);
     }
-    
-    /**
-     * Descarga una textura de personaje
-     */
-    public void unloadCharacterTexture(int characterId, int variant) {
-        String key = characterId + "_" + variant;
-        
-        if (characterTextures.containsKey(key)) {
-            Texture texture = characterTextures.get(key);
-            if (texture != null) {
-                texture.dispose();
-            }
-            characterTextures.remove(key);
-        }
-    }
-    
-    /**
-     * Descarga todas las variantes de un personaje
-     */
-    public void unloadCharacter(int characterId) {
+
+    public int getCharacterUnlockLevel(int characterId) {
+        int level = 0;
         for (int v = 0; v < Constants.VARIANTS_PER_CHARACTER; v++) {
-            unloadCharacterTexture(characterId, v);
+            if (isVariantUnlocked(characterId, v)) level = v + 1;
+            else break;
+        }
+        return level;
+    }
+
+    public int getNextVariantToUnlock(int characterId) {
+        for (int v = 0; v < Constants.VARIANTS_PER_CHARACTER; v++) {
+            if (!isVariantUnlocked(characterId, v)) return v;
+        }
+        return -1;
+    }
+
+    public int getNextUnlockCost(int characterId) {
+        int nextVariant = getNextVariantToUnlock(characterId);
+        if (nextVariant < 0) return -1;
+        return Constants.getGalleryCost(nextVariant);
+    }
+
+    public boolean canUnlockNextVariant(int characterId) {
+        int cost = getNextUnlockCost(characterId);
+        if (cost < 0) return false;
+        return pcoins >= cost;
+    }
+
+    public boolean unlockNextVariant(int characterId) {
+        int nextVariant = getNextVariantToUnlock(characterId);
+        if (nextVariant < 0) return false;
+
+        int cost = Constants.getGalleryCost(nextVariant);
+        if (cost < 0 || pcoins < cost) return false;
+
+        pcoins -= cost;
+        if (galleryUnlocks == null) galleryUnlocks = new HashMap<>();
+        galleryUnlocks.put(getUnlockKey(characterId, nextVariant), true);
+        return true;
+    }
+
+    public boolean unlockCharacterLevel(int characterId) {
+        return unlockNextVariant(characterId);
+    }
+
+    public float getGalleryCompletionPercent() {
+        int totalPossible = Constants.TOTAL_CHARACTERS * Constants.VARIANTS_PER_CHARACTER;
+        if (totalPossible <= 0) return 0f;
+
+        int unlocked = 0;
+        if (galleryUnlocks == null) galleryUnlocks = new HashMap<>();
+        for (Boolean value : galleryUnlocks.values()) {
+            if (value != null && value) unlocked++;
+        }
+        return (float) unlocked / totalPossible * 100f;
+    }
+
+    public int getUnlockedCharacterCount() {
+        int count = 0;
+        for (int c = 0; c < Constants.TOTAL_CHARACTERS; c++) {
+            if (isVariantUnlocked(c, 0)) count++;
+        }
+        return count;
+    }
+
+    public int getFullyUnlockedCharacterCount() {
+        int count = 0;
+        for (int c = 0; c < Constants.TOTAL_CHARACTERS; c++) {
+            if (getCharacterUnlockLevel(c) >= Constants.VARIANTS_PER_CHARACTER) count++;
+        }
+        return count;
+    }
+
+    public boolean canClaimDailyReward() {
+        long now = System.currentTimeMillis();
+        long day = 24L * 60L * 60L * 1000L;
+        return (now - lastDailyRewardTime) >= day;
+    }
+
+    public int claimDailyReward() {
+        if (!canClaimDailyReward()) return 0;
+
+        long now = System.currentTimeMillis();
+        long day = 24L * 60L * 60L * 1000L;
+        long twoDays = 2L * day;
+
+        if ((now - lastDailyRewardTime) >= twoDays) {
+            dailyRewardStreak = 0;
+        }
+
+        int idx = clamp(dailyRewardStreak, 0, Constants.DAILY_REWARDS.length - 1);
+        int reward = Constants.DAILY_REWARDS[idx];
+        addPcoins(reward);
+
+        dailyRewardStreak = (dailyRewardStreak + 1) % Constants.DAILY_REWARDS.length;
+        lastDailyRewardTime = now;
+
+        return reward;
+    }
+
+    public void recordGamePlayed(boolean victory, int pairsFound) {
+        totalGamesPlayed++;
+        totalPairsFound += Math.max(0, pairsFound);
+
+        if (totalGamesPlayed <= Constants.INTERSTITIAL_NEW_PLAYER_GRACE_GAMES) {
+            gamesPlayedSinceLastAd = 0;
+        } else {
+            gamesPlayedSinceLastAd++;
+        }
+
+        if (victory) {
+            totalVictories++;
+            currentWinStreak++;
+            if (currentWinStreak > bestWinStreak) bestWinStreak = currentWinStreak;
+        } else {
+            totalDefeats++;
+            currentWinStreak = 0;
         }
     }
-    
-    /**
-     * Descarga todos los personajes del cache
-     */
-    public void unloadAllCharacters() {
-        for (Texture texture : characterTextures.values()) {
-            if (texture != null) {
-                texture.dispose();
-            }
-        }
-        characterTextures.clear();
-        Gdx.app.log(Constants.TAG, "Todos los personajes descargados");
+
+    public boolean shouldShowInterstitial() {
+        if (!Constants.isInterstitialEligible(totalGamesPlayed)) return false;
+        return gamesPlayedSinceLastAd >= Constants.INTERSTITIAL_FREQUENCY;
     }
-    
-    /**
-     * Precarga personajes para un nivel
-     */
-    public void preloadCharactersForLevel(int[] characterIds) {
-        for (int id : characterIds) {
-            getCharacterTexture(id, 0); // Solo variante base para gameplay
-        }
+
+    public boolean shouldShowExitInterstitial() {
+        if (!Constants.INTERSTITIAL_ON_EXIT_ENABLED) return false;
+        return Constants.isInterstitialEligible(totalGamesPlayed);
     }
-    
-    // ══════════════════════════════════════════════════════════
-    // INFO Y DEBUG
-    // ══════════════════════════════════════════════════════════
-    
-    public boolean isEssentialLoaded() {
-        return essentialsLoaded;
+
+    public void resetAdCounter() {
+        gamesPlayedSinceLastAd = 0;
     }
-    
-    public int getCachedCharacterCount() {
-        return characterTextures.size;
+
+    public void recordInterstitialShown() {
+        totalInterstitialsShown++;
+        resetAdCounter();
     }
-    
-    public String getDebugInfo() {
-        int realFrames = 0;
-        for (Texture t : frameTextures) {
-            if (t != null) realFrames++;
-        }
-        
-        return String.format(
-            "Assets: CardBack=%s, Logo=%s, Frames=%d/4, Characters=%d cached",
-            cardBackTexture != null ? "OK" : "PLACEHOLDER",
-            logoTexture != null ? "OK" : "NO",
-            realFrames,
-            characterTextures.size
-        );
+
+    public void recordRewardedWatched() {
+        totalRewardedAdsWatched++;
     }
-    
+
+    public void recordHintUsed() {
+        totalHintsUsed++;
+    }
+
+    public void recordHdDownload() {
+        totalHdDownloads++;
+    }
+
     @Override
-    public void dispose() {
-        Gdx.app.log(Constants.TAG, "Disposing AssetManager...");
-        
-        // Texturas reales
-        if (cardBackTexture != null) cardBackTexture.dispose();
-        if (logoTexture != null) logoTexture.dispose();
-        
-        for (Texture t : frameTextures) {
-            if (t != null) t.dispose();
-        }
-        
-        // Placeholders
-        if (placeholderCharacter != null) placeholderCharacter.dispose();
-        if (placeholderCardBack != null) placeholderCardBack.dispose();
-        
-        for (Texture t : placeholderFrames) {
-            if (t != null) t.dispose();
-        }
-        
-        // Cache de personajes
-        unloadAllCharacters();
-        
-        essentialsLoaded = false;
-        Gdx.app.log(Constants.TAG, "AssetManager disposed");
+    public String toString() {
+        return String.format(
+            "PlayerData[PCOINS=%d, Level=%d/%d, PairLv=%d, TimeLv=%d, Gallery=%.1f%%, Games=%d]",
+            pcoins, currentLevel, maxLevelCompleted, pairValueLevel, timeBonusLevel,
+            getGalleryCompletionPercent(), totalGamesPlayed
+        );
     }
 }
