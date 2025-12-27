@@ -31,7 +31,6 @@ public class AssetManager implements Disposable {
         }
 
         essentialsLoaded = true;
-        Gdx.app.log(Constants.TAG, "AssetManager ready");
     }
 
     private Texture loadIfExists(String path) {
@@ -42,7 +41,6 @@ public class AssetManager implements Disposable {
             t.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
             return t;
         } catch (Exception e) {
-            Gdx.app.error(Constants.TAG, "Texture load failed: " + path + " -> " + e.getMessage());
             return null;
         }
     }
