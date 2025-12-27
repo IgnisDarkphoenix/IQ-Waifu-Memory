@@ -16,7 +16,6 @@ public class LevelDatabase {
 
         String path = Constants.LEVELS_JSON_PATH;
         if (!Gdx.files.internal(path).exists()) {
-            Gdx.app.log(Constants.TAG, "levels.json no existe: " + path);
             return;
         }
 
@@ -34,10 +33,7 @@ public class LevelDatabase {
                     overrides[level] = lv;
                 }
             }
-
-            Gdx.app.log(Constants.TAG, "LevelDatabase loaded");
-        } catch (Exception e) {
-            Gdx.app.error(Constants.TAG, "levels.json load error: " + e.getMessage());
+        } catch (Exception ignored) {
         }
     }
 
@@ -73,10 +69,8 @@ public class LevelDatabase {
             cfg.gridSize = Constants.GRID_EASY;
             cfg.timeBonusSeconds = Constants.TIME_BONUS_4X4;
             cfg.rewardMultiplier = Constants.MULTIPLIER_EASY;
-
             cfg.shuffle = false;
             cfg.shuffleInterval = Constants.SHUFFLE_INTERVAL;
-
             cfg.fade = false;
             cfg.multiGrid = false;
             cfg.multiGridCount = 1;
@@ -85,10 +79,8 @@ public class LevelDatabase {
             cfg.gridSize = Constants.GRID_NORMAL;
             cfg.timeBonusSeconds = Constants.TIME_BONUS_6X6;
             cfg.rewardMultiplier = Constants.MULTIPLIER_NORMAL;
-
             cfg.shuffle = false;
             cfg.shuffleInterval = Constants.SHUFFLE_INTERVAL;
-
             cfg.fade = false;
             cfg.multiGrid = false;
             cfg.multiGridCount = 1;
@@ -97,10 +89,8 @@ public class LevelDatabase {
             cfg.gridSize = Constants.GRID_HARD;
             cfg.timeBonusSeconds = Constants.TIME_BONUS_8X8;
             cfg.rewardMultiplier = Constants.MULTIPLIER_HARD;
-
             cfg.shuffle = true;
             cfg.shuffleInterval = Constants.SHUFFLE_INTERVAL;
-
             cfg.fade = false;
             cfg.multiGrid = false;
             cfg.multiGridCount = 1;
