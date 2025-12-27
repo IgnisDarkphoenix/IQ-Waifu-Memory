@@ -290,7 +290,6 @@ public class GalleryScreen extends BaseScreen {
 
             @Override
             public void onAdFailed() {
-                Gdx.app.log(Constants.TAG, "Ad failed to show");
             }
         });
     }
