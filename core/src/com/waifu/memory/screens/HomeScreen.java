@@ -110,7 +110,7 @@ public class HomeScreen extends BaseScreen {
     }
     
     private void setupInput() {
-        Gdx.input.setInputProcessor(new InputAdapter() {
+        setInputProcessor(new InputAdapter() {
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
                 // Convertir coordenadas de pantalla a mundo
