@@ -177,6 +177,9 @@ public class GameGrid {
         float gridHeight = gridSize * cardH + (gridSize - 1) * spacing;
 
         shapeRenderer.setProjectionMatrix(camera.combined);
+// FIX: Habilitar blending para transparencias
+Gdx.gl.glEnable(GL20.GL_BLEND);
+Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(0.08f, 0.08f, 0.12f, 0.7f);
         shapeRenderer.rect(
