@@ -1,4 +1,3 @@
-
 package com.waifu.memory.screens;
 
 import com.badlogic.gdx.Gdx;
@@ -69,6 +68,31 @@ public abstract class BaseScreen implements Screen {
             }
             inputProcessor = null;
         }
+    }
+    
+    /**
+     * Muestra el banner de ads (si está disponible)
+     */
+    protected void showBanner() {
+        if (game.hasAdHandler()) {
+            game.getAdHandler().showBanner();
+        }
+    }
+    
+    /**
+     * Oculta el banner de ads
+     */
+    protected void hideBanner() {
+        if (game.hasAdHandler()) {
+            game.getAdHandler().hideBanner();
+        }
+    }
+    
+    /**
+     * Verifica si el banner está visible
+     */
+    protected boolean isBannerVisible() {
+        return game.hasAdHandler() && game.getAdHandler().isBannerVisible();
     }
     
     protected PlayerData getPlayerData() {
