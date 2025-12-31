@@ -17,32 +17,26 @@ import com.waifu.memory.utils.Constants;
  */
 public class HomeScreen extends BaseScreen {
     
-    // Fuentes
     private BitmapFont titleFont;
     private BitmapFont buttonFont;
     private BitmapFont infoFont;
     private GlyphLayout layout;
     
-    // Renderizado de formas
     private ShapeRenderer shapeRenderer;
     
-    // Botones (áreas táctiles)
     private Rectangle playButton;
     private Rectangle upgradesButton;
     private Rectangle galleryButton;
     private Rectangle settingsButton;
     
-    // Animación del botón PLAY
     private float playButtonPulse;
     private float pulseDirection;
     
-    // Input
     private Vector3 touchPos;
     
     public HomeScreen(IQWaifuMemory game) {
         super(game);
         
-        // Inicializar fuentes
         titleFont = new BitmapFont();
         titleFont.getData().setScale(4f);
         titleFont.setColor(Color.WHITE);
@@ -60,21 +54,17 @@ public class HomeScreen extends BaseScreen {
         shapeRenderer = new ShapeRenderer();
         touchPos = new Vector3();
         
-        // Crear áreas de botones
         createButtons();
         
-        // Animación
         playButtonPulse = 0f;
         pulseDirection = 1f;
         
-        // Configurar input
         setupInput();
     }
     
     private void createButtons() {
         float centerX = Constants.WORLD_WIDTH / 2;
         
-        // Botón PLAY grande en el centro
         float playSize = 300f;
         playButton = new Rectangle(
             centerX - playSize / 2,
@@ -82,7 +72,6 @@ public class HomeScreen extends BaseScreen {
             playSize, playSize
         );
         
-        // Botones secundarios
         float btnWidth = 300f;
         float btnHeight = 80f;
         float btnY = Constants.WORLD_HEIGHT * 0.2f;
@@ -100,7 +89,6 @@ public class HomeScreen extends BaseScreen {
             btnWidth, btnHeight
         );
         
-        // Botón settings (esquina superior derecha)
         float settingsSize = 80f;
         settingsButton = new Rectangle(
             Constants.WORLD_WIDTH - settingsSize - 40,
@@ -113,11 +101,9 @@ public class HomeScreen extends BaseScreen {
         setInputProcessor(new InputAdapter() {
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-                // Convertir coordenadas de pantalla a mundo
                 touchPos.set(screenX, screenY, 0);
                 viewport.unproject(touchPos);
                 
-                // Verificar qué botón fue tocado
                 if (playButton.contains(touchPos.x, touchPos.y)) {
                     onPlayClicked();
                     return true;
@@ -146,34 +132,29 @@ public class HomeScreen extends BaseScreen {
     private void onPlayClicked() {
         audioManager.playButtonClick();
         Gdx.app.log(Constants.TAG, "PLAY clicked!");
-        // TODO: Ir a LevelSelectScreen
         goToScreen(new LevelSelectScreen(game));
     }
     
     private void onUpgradesClicked() {
         audioManager.playButtonClick();
         Gdx.app.log(Constants.TAG, "UPGRADES clicked!");
-        // TODO: Ir a UpgradesScreen
         goToScreen(new UpgradesScreen(game));
     }
     
     private void onGalleryClicked() {
         audioManager.playButtonClick();
         Gdx.app.log(Constants.TAG, "GALLERY clicked!");
-        // TODO: Ir a GalleryScreen
         goToScreen(new GalleryScreen(game));
     }
     
     private void onSettingsClicked() {
         audioManager.playButtonClick();
         Gdx.app.log(Constants.TAG, "SETTINGS clicked!");
-        // TODO: Ir a SettingsScreen
         goToScreen(new SettingsScreen(game));
     }
     
     @Override
     protected void update(float delta) {
-        // Animar botón PLAY
         playButtonPulse += delta * pulseDirection * 2f;
         if (playButtonPulse >= 1f) {
             playButtonPulse = 1f;
@@ -186,25 +167,20 @@ public class HomeScreen extends BaseScreen {
     
     @Override
     protected void draw() {
-        // Dibujar formas (botones)
         drawButtons();
         
-        // Dibujar texto
         batch.begin();
         
-        // Header: PCOINS
         String pcoinsText = Constants.CURRENCY_NAME + ": " + getPlayerData().pcoins;
         layout.setText(infoFont, pcoinsText);
         infoFont.draw(batch, pcoinsText, 40, Constants.WORLD_HEIGHT - 40);
         
-        // Título del juego
         String title = Constants.GAME_TITLE;
         layout.setText(titleFont, title);
         titleFont.draw(batch, title,
             Constants.WORLD_WIDTH / 2 - layout.width / 2,
             Constants.WORLD_HEIGHT * 0.85f);
         
-        // Texto en botones
         drawButtonText("PLAY", playButton);
         drawButtonText("MEJORAS", upgradesButton);
         drawButtonText("GALERIA", galleryButton);
@@ -217,7 +193,6 @@ public class HomeScreen extends BaseScreen {
         shapeRenderer.setProjectionMatrix(camera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         
-        // Botón PLAY con efecto pulse
         float pulse = playButtonPulse * 10f;
         shapeRenderer.setColor(Constants.COLOR_PRIMARY[0],
                                Constants.COLOR_PRIMARY[1],
@@ -229,18 +204,15 @@ public class HomeScreen extends BaseScreen {
             playButton.height + pulse * 2
         );
         
-        // Botón Mejoras
         shapeRenderer.setColor(Constants.COLOR_SECONDARY[0],
                                Constants.COLOR_SECONDARY[1],
                                Constants.COLOR_SECONDARY[2], 1f);
         shapeRenderer.rect(upgradesButton.x, upgradesButton.y,
                           upgradesButton.width, upgradesButton.height);
         
-        // Botón Galería
         shapeRenderer.rect(galleryButton.x, galleryButton.y,
                           galleryButton.width, galleryButton.height);
         
-        // Botón Settings
         shapeRenderer.setColor(0.3f, 0.3f, 0.4f, 1f);
         shapeRenderer.rect(settingsButton.x, settingsButton.y,
                           settingsButton.width, settingsButton.height);
@@ -253,6 +225,20 @@ public class HomeScreen extends BaseScreen {
         buttonFont.draw(batch, text,
             button.x + (button.width - layout.width) / 2,
             button.y + (button.height + layout.height) / 2);
+    }
+    
+    @Override
+    public void show() {
+        super.show();
+        // Mostrar banner al entrar a la pantalla
+        showBanner();
+    }
+    
+    @Override
+    public void hide() {
+        super.hide();
+        // Ocultar banner al salir
+        hideBanner();
     }
     
     @Override
