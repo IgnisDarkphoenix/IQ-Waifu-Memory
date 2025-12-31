@@ -3,98 +3,97 @@ package com.waifu.memory;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.waifu.memory.data.PlayerData;
 import com.waifu.memory.managers.AssetManager;
 import com.waifu.memory.managers.AudioManager;
 import com.waifu.memory.managers.SaveManager;
-import com.waifu.memory.screens.SplashScreen;
+import com.waifu.memory.screens.HomeScreen;
 import com.waifu.memory.utils.Constants;
 
 /**
  * Clase principal del juego IQ Waifu Memory
- * Extiende Game para manejar múltiples pantallas
+ * Maneja los managers globales y el ciclo de vida
  */
 public class IQWaifuMemory extends Game {
     
-    // SpriteBatch compartido para optimización
     private SpriteBatch batch;
-    
-    // Managers del juego
     private AssetManager assetManager;
     private AudioManager audioManager;
     private SaveManager saveManager;
     
-    // Interface para ads (implementada en Android)
+    private PlayerData playerData;
+    
     private AdHandler adHandler;
     
-    // Interfaz para manejar anuncios
+    /**
+     * Interface para manejo de anuncios
+     * Implementada por la plataforma (Android/iOS)
+     */
     public interface AdHandler {
-        void showRewardedAd(RewardCallback callback);
-        void showInterstitialAd();
+        // Rewarded Ads
         boolean isRewardedAdLoaded();
-        void loadRewardedAd();
+        void showRewardedAd(RewardCallback callback);
+        
+        // Interstitial Ads
+        void showInterstitialAd();
+        
+        // Banner Ads - NUEVO
+        void showBanner();
+        void hideBanner();
+        boolean isBannerVisible();
     }
     
-    // Callback para recompensas de anuncios
     public interface RewardCallback {
         void onRewardEarned();
         void onAdFailed();
     }
     
-    public IQWaifuMemory() {
-        this.adHandler = null;
-    }
-    
-    public IQWaifuMemory(AdHandler adHandler) {
-        this.adHandler = adHandler;
-    }
-    
     @Override
     public void create() {
-        Gdx.app.log(Constants.TAG, "Iniciando IQ Waifu Memory v" + Constants.VERSION);
+        Gdx.app.log(Constants.TAG, "IQ Waifu Memory v" + Constants.VERSION + " starting...");
         
-        // Inicializar SpriteBatch
         batch = new SpriteBatch();
         
-        // Inicializar managers
         assetManager = new AssetManager();
         audioManager = new AudioManager();
         saveManager = new SaveManager();
         
-        // Cargar datos guardados
-        saveManager.load();
+        assetManager.loadEssentialAssets();
         
-        // Ir a la pantalla de splash
-        setScreen(new SplashScreen(this));
+        playerData = saveManager.loadPlayerData();
+        if (playerData == null) {
+            Gdx.app.log(Constants.TAG, "Creating new player data");
+            playerData = new PlayerData();
+            saveManager.savePlayerData(playerData);
+        }
+        
+        audioManager.setMusicVolume(playerData.musicVolume);
+        audioManager.setSfxVolume(playerData.sfxVolume);
+        
+        setScreen(new HomeScreen(this));
+        
+        Gdx.app.log(Constants.TAG, "Game initialized successfully");
     }
     
-    @Override
-    public void render() {
-        super.render();
+    public void setAdHandler(AdHandler handler) {
+        this.adHandler = handler;
+        Gdx.app.log(Constants.TAG, "Ad handler configured");
     }
     
-    @Override
-    public void dispose() {
-        Gdx.app.log(Constants.TAG, "Cerrando juego...");
-        
-        if (batch != null) {
-            batch.dispose();
-        }
-        
-        if (assetManager != null) {
-            assetManager.dispose();
-        }
-        
-        if (audioManager != null) {
-            audioManager.dispose();
-        }
-        
-        // Guardar antes de cerrar
-        if (saveManager != null) {
-            saveManager.save();
+    public boolean hasAdHandler() {
+        return adHandler != null;
+    }
+    
+    public AdHandler getAdHandler() {
+        return adHandler;
+    }
+    
+    public void savePlayerData() {
+        if (playerData != null && saveManager != null) {
+            saveManager.savePlayerData(playerData);
         }
     }
     
-    // Getters para acceso desde otras clases
     public SpriteBatch getBatch() {
         return batch;
     }
@@ -111,11 +110,24 @@ public class IQWaifuMemory extends Game {
         return saveManager;
     }
     
-    public AdHandler getAdHandler() {
-        return adHandler;
+    public PlayerData getPlayerData() {
+        return playerData;
     }
     
-    public boolean hasAdHandler() {
-        return adHandler != null;
+    @Override
+    public void dispose() {
+        Gdx.app.log(Constants.TAG, "Disposing game resources...");
+        
+        savePlayerData();
+        
+        if (batch != null) batch.dispose();
+        if (assetManager != null) assetManager.dispose();
+        if (audioManager != null) audioManager.dispose();
+        
+        if (getScreen() != null) {
+            getScreen().dispose();
+        }
+        
+        Gdx.app.log(Constants.TAG, "Game disposed");
     }
 }
