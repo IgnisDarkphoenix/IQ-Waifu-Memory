@@ -76,7 +76,7 @@ public class UpgradesScreen extends BaseScreen {
     }
     
     private void setupInput() {
-        Gdx.input.setInputProcessor(new InputAdapter() {
+        setInputProcessor(new InputAdapter() {
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
                 touchPos.set(screenX, screenY, 0);
@@ -227,6 +227,20 @@ public class UpgradesScreen extends BaseScreen {
             upgradeTimeButton.y + (upgradeTimeButton.height + layout.height) / 2);
         
         batch.end();
+    }
+    
+    @Override
+    public void show() {
+        super.show();
+        // Mostrar banner al entrar
+        showBanner();
+    }
+    
+    @Override
+    public void hide() {
+        super.hide();
+        // Ocultar banner al salir
+        hideBanner();
     }
     
     @Override
