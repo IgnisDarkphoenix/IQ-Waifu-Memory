@@ -119,7 +119,8 @@ public class GalleryScreen extends BaseScreen {
     }
 
     private void setupInput() {
-        Gdx.input.setInputProcessor(new InputAdapter() {
+        // FIX: Usar setInputProcessor seguro
+        setInputProcessor(new InputAdapter() {
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
                 touchPos.set(screenX, screenY, 0);
