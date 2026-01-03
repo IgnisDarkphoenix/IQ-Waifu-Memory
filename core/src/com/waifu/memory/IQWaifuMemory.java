@@ -37,7 +37,7 @@ public class IQWaifuMemory extends Game {
         // Interstitial Ads
         void showInterstitialAd();
         
-        // Banner Ads - NUEVO
+        // Banner Ads
         void showBanner();
         void hideBanner();
         boolean isBannerVisible();
@@ -60,11 +60,15 @@ public class IQWaifuMemory extends Game {
         
         assetManager.loadEssentialAssets();
         
-        playerData = saveManager.loadPlayerData();
+        // FIX: Usar los métodos correctos de SaveManager
+        saveManager.load();
+        playerData = saveManager.getPlayerData();
+        
+        // El SaveManager ya crea un PlayerData nuevo si no existe,
+        // pero verificamos por seguridad
         if (playerData == null) {
-            Gdx.app.log(Constants.TAG, "Creating new player data");
+            Gdx.app.error(Constants.TAG, "PlayerData was null after load, this shouldn't happen!");
             playerData = new PlayerData();
-            saveManager.savePlayerData(playerData);
         }
         
         audioManager.setMusicVolume(playerData.musicVolume);
@@ -88,9 +92,10 @@ public class IQWaifuMemory extends Game {
         return adHandler;
     }
     
+    // FIX: Guardar sin parámetros
     public void savePlayerData() {
-        if (playerData != null && saveManager != null) {
-            saveManager.savePlayerData(playerData);
+        if (saveManager != null) {
+            saveManager.save();
         }
     }
     
