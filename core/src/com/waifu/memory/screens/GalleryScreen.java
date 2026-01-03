@@ -119,7 +119,6 @@ public class GalleryScreen extends BaseScreen {
     }
 
     private void setupInput() {
-        // FIX: Usar setInputProcessor seguro
         setInputProcessor(new InputAdapter() {
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
@@ -222,6 +221,8 @@ public class GalleryScreen extends BaseScreen {
         viewingCharacter = true;
         viewedCharacterId = characterId;
         viewedVariant = 0;
+        // Ocultar banner cuando se abre el visor
+        hideBanner();
         loadViewerTexture();
     }
 
@@ -233,6 +234,9 @@ public class GalleryScreen extends BaseScreen {
         currentViewTexture = null;
         currentViewCharId = -1;
         currentViewVariant = -1;
+        
+        // Mostrar banner al volver a la grilla
+        showBanner();
     }
 
     private void loadViewerTexture() {
@@ -546,9 +550,20 @@ public class GalleryScreen extends BaseScreen {
     }
 
     @Override
+    public void show() {
+        super.show();
+        // Mostrar banner al entrar (solo en grilla)
+        if (!viewingCharacter) {
+            showBanner();
+        }
+    }
+
+    @Override
     public void hide() {
         super.hide();
+        // Ocultar banner al salir
         if (viewingCharacter) closeViewer();
+        hideBanner();
     }
 
     @Override
