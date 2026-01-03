@@ -1,0 +1,42 @@
+name: Build IQ Waifu Memory
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+    
+    - name: Configurar JDK 11
+      uses: actions/setup-java@v4
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: gradle
+    
+    - name: Dar permisos a gradlew
+      run: chmod +x gradlew
+    
+    - name: Limpiar proyecto
+      run: ./gradlew clean
+    
+    - name: Compilar proyecto core
+      run: ./gradlew :core:build
+    
+    - name: Compilar APK de Android (Debug)
+      run: ./gradlew :android:assembleDebug
+    
+    - name: Subir APK como artifact
+      uses: actions/upload-artifact@v4
+      if: success()
+      with:
+        name: iq-waifu-memory-debug
+        path: android/build/outputs/apk/debug/*.apk
+        retention-days: 7
