@@ -102,7 +102,8 @@ public class SettingsScreen extends BaseScreen {
     }
     
     private void setupInput() {
-        Gdx.input.setInputProcessor(new InputAdapter() {
+        // FIX: Usar setInputProcessor seguro
+        setInputProcessor(new InputAdapter() {
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
                 touchPos.set(screenX, screenY, 0);
@@ -206,7 +207,8 @@ public class SettingsScreen extends BaseScreen {
     
     private void resetAllData() {
         // ADVERTENCIA: Esto borra todo el progreso
-        saveManager.resetAll();
+        // FIX: Acceder correctamente al SaveManager
+        game.getSaveManager().resetAll();
         Gdx.app.log(Constants.TAG, "Todos los datos han sido reseteados");
         
         // Volver a home con datos frescos
