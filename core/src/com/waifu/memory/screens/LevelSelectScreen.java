@@ -122,7 +122,6 @@ public class LevelSelectScreen extends BaseScreen {
     }
 
     private void setupInput() {
-        // FIX: Usar setInputProcessor seguro
         setInputProcessor(new InputAdapter() {
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
@@ -285,6 +284,20 @@ public class LevelSelectScreen extends BaseScreen {
     private void drawTabText(String text, Rectangle tab) {
         layout.setText(tabFont, text);
         tabFont.draw(batch, text, tab.x + (tab.width - layout.width) / 2, tab.y + (tab.height + layout.height) / 2);
+    }
+
+    @Override
+    public void show() {
+        super.show();
+        // Banner implementado
+        showBanner();
+    }
+
+    @Override
+    public void hide() {
+        super.hide();
+        // Ocultar banner al salir
+        hideBanner();
     }
 
     @Override
